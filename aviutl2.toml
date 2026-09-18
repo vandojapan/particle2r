@@ -1,0 +1,21 @@
+#:schema ./.aviutl2-cli/aviutl2.schema.json
+# 設定ファイルについては https://github.com/sevenc-nanashi/aviutl2-cli を参照してください。
+[project]
+id = "particle2r"
+name = "particle2r"
+version = "0.2.1"
+
+[development]
+aviutl2_version = "2.1.9"
+
+[artifacts.particle_auf2]
+destination = "Plugin/particle_aviutl2.auf2"
+placement_method = "copy"
+
+[artifacts.particle_auf2.profiles.debug]
+build = "cargo build -p particle-aviutl2"
+source = "target/debug/particle_aviutl2.dll"
+
+[artifacts.particle_auf2.profiles.release]
+build = "cargo build -p particle-aviutl2 --release"
+source = "target/release/particle_aviutl2.dll"

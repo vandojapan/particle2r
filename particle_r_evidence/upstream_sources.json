@@ -1,0 +1,95 @@
+{
+  "observed_commit": "b38f65c06790c0380036435a5df4d55a0cc294b9",
+  "sources": [
+    {
+      "path": ".gitmodules",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/.gitmodules",
+      "sha256": "4e2527add8036f8bf0321aced48a64ef6445ed37ade6aa87f068cc4a48e2fbd4",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "Cargo.toml",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/Cargo.toml",
+      "sha256": "b15cd4ef23e0ec7eb4a0253f6f74d9ec476b0e5800e3c9386b09b933497adb3b",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "aviutl2.toml",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/aviutl2.toml",
+      "sha256": "8cb786d596c0e29bc11b5e39e928185ed0277ba84b03243999c33ee2c755ae04",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/Cargo.toml",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/Cargo.toml",
+      "sha256": "2bd754e7a5a64f0532737f5ab6c888be5d36cd820a42377edb6e46b24ee8b53b",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/src/filter/mod.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/src/filter/mod.rs",
+      "sha256": "36fb59ad92dc07b257f84699073a09c46f6e5f9eddf53c0e17fe5cb5d02d4472",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/src/module/binding.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/src/module/binding.rs",
+      "sha256": "5bed10c478f6f47f0c7649a69aad0e0fff3f391987bf1618ae0e4753639ad246",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/src/module/mod.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/src/module/mod.rs",
+      "sha256": "43da38eae88576c32fe6437cb825b79ef21809b6a796fd4131400fe682322769",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/src/module/param.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/src/module/param.rs",
+      "sha256": "6b1dff4abd4ed608c2d14a4d8487fc40cb3ac7d1952c9735cb07273a40e6c45d",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2-sys/src/filter2.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2-sys/src/filter2.rs",
+      "sha256": "22a1991d2d1160bb46d108d6454dcb3d79ad8028561b3f6ec4e1548c4b27b1d4",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2-sys/src/module2.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2-sys/src/module2.rs",
+      "sha256": "b341c5ce773fe8368c133de2c301ac08e2d601e79d033237ec920a9b75b595eb",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "examples/random-color-filter/src/lib.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/examples/random-color-filter/src/lib.rs",
+      "sha256": "6d48cdf5ecb38dc1ce32e7b88805a1e92e2367c9f2e8936b93a4a9c9d831ffff",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "examples/regex-module/Cargo.toml",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/examples/regex-module/Cargo.toml",
+      "sha256": "4f1cf03369c30c08cdf44b4c89e380a50981153aa652f4ae68f5b838d0a9c2b1",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "examples/regex-module/src/lib.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/examples/regex-module/src/lib.rs",
+      "sha256": "4a99332034096e24e4820c60d870e4287d5661844e95205ac3f11a033a66b5ef",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/src/filter/binding/mod.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/src/filter/binding/mod.rs",
+      "sha256": "012b792c0015627956d557be5d87858369840948bd17cf0e454b89f076e0ae6f",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    },
+    {
+      "path": "crates/aviutl2/src/filter/binding/video.rs",
+      "source_url": "https://github.com/sevenc-nanashi/aviutl2-rs/blob/b38f65c06790c0380036435a5df4d55a0cc294b9/crates/aviutl2/src/filter/binding/video.rs",
+      "sha256": "2738094ee8c5c2794464c299d4b9fbb5eba2c993696ca553599edcefbd49add1",
+      "note": "Downloaded main at investigation time; video.rs fetched explicitly at the recorded commit."
+    }
+  ]
+}

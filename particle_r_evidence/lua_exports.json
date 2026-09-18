@@ -1,0 +1,32 @@
+[
+  {
+    "name": "timefunc",
+    "rva": "0x8430",
+    "va": "0x6b708430"
+  },
+  {
+    "name": "gridfunc",
+    "rva": "0x2710",
+    "va": "0x6b702710"
+  },
+  {
+    "name": "linefunc",
+    "rva": "0x3080",
+    "va": "0x6b703080"
+  },
+  {
+    "name": "windfunc",
+    "rva": "0x54d0",
+    "va": "0x6b7054d0"
+  },
+  {
+    "name": "concenfunc",
+    "rva": "0x1280",
+    "va": "0x6b701280"
+  },
+  {
+    "name": "func",
+    "rva": "0x31dd0",
+    "va": "0x6b731dd0"
+  }
+]

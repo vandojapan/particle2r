@@ -1,0 +1,906 @@
+# Lua registration [0x6b7a25e0, 0x6b7a2608)
+6b7a25e0:	83 ec 1c             	sub    esp,0x1c
+6b7a25e3:	8b 44 24 20          	mov    eax,DWORD PTR [esp+0x20]
+6b7a25e7:	c7 44 24 08 00 50 7a 	mov    DWORD PTR [esp+0x8],0x6b7a5000
+6b7a25ee:	6b 
+6b7a25ef:	c7 44 24 04 6c 75 7a 	mov    DWORD PTR [esp+0x4],0x6b7a756c ; 'particle_set3'
+6b7a25f6:	6b 
+6b7a25f7:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7a25fa:	e8 d1 00 00 00       	call   0x6b7a26d0 ; luaL_register
+6b7a25ff:	b8 01 00 00 00       	mov    eax,0x1
+6b7a2604:	83 c4 1c             	add    esp,0x1c
+6b7a2607:	c3                   	ret
+
+# MT19937 routines [0x6b70acb0, 0x6b70af6c)
+6b70acb0:	8b 4c 24 04          	mov    ecx,DWORD PTR [esp+0x4]
+6b70acb4:	b8 01 00 00 00       	mov    eax,0x1
+6b70acb9:	89 0d 20 90 7a 6b    	mov    DWORD PTR ds:0x6b7a9020,ecx
+6b70acbf:	90                   	nop
+6b70acc0:	89 ca                	mov    edx,ecx
+6b70acc2:	c1 ea 1e             	shr    edx,0x1e
+6b70acc5:	31 ca                	xor    edx,ecx
+6b70acc7:	69 ca 65 89 07 6c    	imul   ecx,edx,0x6c078965
+6b70accd:	01 c1                	add    ecx,eax
+6b70accf:	89 0c 85 20 90 7a 6b 	mov    DWORD PTR [eax*4+0x6b7a9020],ecx
+6b70acd6:	83 c0 01             	add    eax,0x1
+6b70acd9:	3d 70 02 00 00       	cmp    eax,0x270
+6b70acde:	75 e0                	jne    0x6b70acc0
+6b70ace0:	c7 05 38 50 7a 6b 70 	mov    DWORD PTR ds:0x6b7a5038,0x270
+6b70ace7:	02 00 00 
+6b70acea:	c3                   	ret
+6b70aceb:	90                   	nop
+6b70acec:	8d 74 26 00          	lea    esi,[esi+eiz*1+0x0]
+6b70acf0:	55                   	push   ebp
+6b70acf1:	ba aa d6 2b 01       	mov    edx,0x12bd6aa
+6b70acf6:	57                   	push   edi
+6b70acf7:	56                   	push   esi
+6b70acf8:	be 01 00 00 00       	mov    esi,0x1
+6b70acfd:	53                   	push   ebx
+6b70acfe:	8b 6c 24 14          	mov    ebp,DWORD PTR [esp+0x14]
+6b70ad02:	c7 05 20 90 7a 6b aa 	mov    DWORD PTR ds:0x6b7a9020,0x12bd6aa
+6b70ad09:	d6 2b 01 
+6b70ad0c:	8d 74 26 00          	lea    esi,[esi+eiz*1+0x0]
+6b70ad10:	89 d0                	mov    eax,edx
+6b70ad12:	c1 e8 1e             	shr    eax,0x1e
+6b70ad15:	31 d0                	xor    eax,edx
+6b70ad17:	69 d0 65 89 07 6c    	imul   edx,eax,0x6c078965
+6b70ad1d:	01 f2                	add    edx,esi
+6b70ad1f:	89 14 b5 20 90 7a 6b 	mov    DWORD PTR [esi*4+0x6b7a9020],edx
+6b70ad26:	83 c6 01             	add    esi,0x1
+6b70ad29:	81 fe 70 02 00 00    	cmp    esi,0x270
+6b70ad2f:	75 df                	jne    0x6b70ad10
+6b70ad31:	8b 15 20 90 7a 6b    	mov    edx,DWORD PTR ds:0x6b7a9020
+6b70ad37:	b8 01 00 00 00       	mov    eax,0x1
+6b70ad3c:	81 7c 24 18 70 02 00 	cmp    DWORD PTR [esp+0x18],0x270
+6b70ad43:	00 
+6b70ad44:	c7 05 38 50 7a 6b 70 	mov    DWORD PTR ds:0x6b7a5038,0x270
+6b70ad4b:	02 00 00 
+6b70ad4e:	0f 4d 74 24 18       	cmovge esi,DWORD PTR [esp+0x18]
+6b70ad53:	31 c9                	xor    ecx,ecx
+6b70ad55:	31 ff                	xor    edi,edi
+6b70ad57:	89 d3                	mov    ebx,edx
+6b70ad59:	c1 eb 1e             	shr    ebx,0x1e
+6b70ad5c:	31 d3                	xor    ebx,edx
+6b70ad5e:	69 d3 0d 66 19 00    	imul   edx,ebx,0x19660d
+6b70ad64:	33 14 85 20 90 7a 6b 	xor    edx,DWORD PTR [eax*4+0x6b7a9020]
+6b70ad6b:	03 54 8d 00          	add    edx,DWORD PTR [ebp+ecx*4+0x0]
+6b70ad6f:	01 ca                	add    edx,ecx
+6b70ad71:	83 c1 01             	add    ecx,0x1
+6b70ad74:	89 14 85 20 90 7a 6b 	mov    DWORD PTR [eax*4+0x6b7a9020],edx
+6b70ad7b:	83 c0 01             	add    eax,0x1
+6b70ad7e:	3d 6f 02 00 00       	cmp    eax,0x26f
+6b70ad83:	7e 11                	jle    0x6b70ad96
+6b70ad85:	8b 15 dc 99 7a 6b    	mov    edx,DWORD PTR ds:0x6b7a99dc
+6b70ad8b:	b8 01 00 00 00       	mov    eax,0x1
+6b70ad90:	89 15 20 90 7a 6b    	mov    DWORD PTR ds:0x6b7a9020,edx
+6b70ad96:	39 4c 24 18          	cmp    DWORD PTR [esp+0x18],ecx
+6b70ad9a:	0f 4e cf             	cmovle ecx,edi
+6b70ad9d:	83 ee 01             	sub    esi,0x1
+6b70ada0:	75 b5                	jne    0x6b70ad57
+6b70ada2:	bb 6f 02 00 00       	mov    ebx,0x26f
+6b70ada7:	89 d1                	mov    ecx,edx
+6b70ada9:	eb 0c                	jmp    0x6b70adb7
+6b70adab:	90                   	nop
+6b70adac:	8d 74 26 00          	lea    esi,[esi+eiz*1+0x0]
+6b70adb0:	8b 0c 85 1c 90 7a 6b 	mov    ecx,DWORD PTR [eax*4+0x6b7a901c]
+6b70adb7:	89 ca                	mov    edx,ecx
+6b70adb9:	c1 ea 1e             	shr    edx,0x1e
+6b70adbc:	31 ca                	xor    edx,ecx
+6b70adbe:	69 d2 65 8b 58 5d    	imul   edx,edx,0x5d588b65
+6b70adc4:	33 14 85 20 90 7a 6b 	xor    edx,DWORD PTR [eax*4+0x6b7a9020]
+6b70adcb:	29 c2                	sub    edx,eax
+6b70adcd:	89 14 85 20 90 7a 6b 	mov    DWORD PTR [eax*4+0x6b7a9020],edx
+6b70add4:	83 c0 01             	add    eax,0x1
+6b70add7:	3d 6f 02 00 00       	cmp    eax,0x26f
+6b70addc:	7e 0f                	jle    0x6b70aded
+6b70adde:	a1 dc 99 7a 6b       	mov    eax,ds:0x6b7a99dc
+6b70ade3:	a3 20 90 7a 6b       	mov    ds:0x6b7a9020,eax
+6b70ade8:	b8 01 00 00 00       	mov    eax,0x1
+6b70aded:	83 eb 01             	sub    ebx,0x1
+6b70adf0:	75 be                	jne    0x6b70adb0
+6b70adf2:	5b                   	pop    ebx
+6b70adf3:	c7 05 20 90 7a 6b 00 	mov    DWORD PTR ds:0x6b7a9020,0x80000000
+6b70adfa:	00 00 80 
+6b70adfd:	5e                   	pop    esi
+6b70adfe:	5f                   	pop    edi
+6b70adff:	5d                   	pop    ebp
+6b70ae00:	c3                   	ret
+6b70ae01:	eb 0d                	jmp    0x6b70ae10
+6b70ae03:	90                   	nop
+6b70ae04:	90                   	nop
+6b70ae05:	90                   	nop
+6b70ae06:	90                   	nop
+6b70ae07:	90                   	nop
+6b70ae08:	90                   	nop
+6b70ae09:	90                   	nop
+6b70ae0a:	90                   	nop
+6b70ae0b:	90                   	nop
+6b70ae0c:	90                   	nop
+6b70ae0d:	90                   	nop
+6b70ae0e:	90                   	nop
+6b70ae0f:	90                   	nop
+6b70ae10:	a1 38 50 7a 6b       	mov    eax,ds:0x6b7a5038
+6b70ae15:	53                   	push   ebx
+6b70ae16:	3d 6f 02 00 00       	cmp    eax,0x26f
+6b70ae1b:	0f 8e 05 01 00 00    	jle    0x6b70af26
+6b70ae21:	3d 71 02 00 00       	cmp    eax,0x271
+6b70ae26:	0f 84 06 01 00 00    	je     0x6b70af32
+6b70ae2c:	8b 15 20 90 7a 6b    	mov    edx,DWORD PTR ds:0x6b7a9020
+6b70ae32:	31 c0                	xor    eax,eax
+6b70ae34:	eb 02                	jmp    0x6b70ae38
+6b70ae36:	89 da                	mov    edx,ebx
+6b70ae38:	83 c0 01             	add    eax,0x1
+6b70ae3b:	81 e2 00 00 00 80    	and    edx,0x80000000
+6b70ae41:	8b 1c 85 20 90 7a 6b 	mov    ebx,DWORD PTR [eax*4+0x6b7a9020]
+6b70ae48:	89 d9                	mov    ecx,ebx
+6b70ae4a:	81 e1 ff ff ff 7f    	and    ecx,0x7fffffff
+6b70ae50:	09 d1                	or     ecx,edx
+6b70ae52:	89 ca                	mov    edx,ecx
+6b70ae54:	83 e1 01             	and    ecx,0x1
+6b70ae57:	d1 ea                	shr    edx,1
+6b70ae59:	33 14 85 50 96 7a 6b 	xor    edx,DWORD PTR [eax*4+0x6b7a9650]
+6b70ae60:	33 14 8d 7c 75 7a 6b 	xor    edx,DWORD PTR [ecx*4+0x6b7a757c]
+6b70ae67:	3d e3 00 00 00       	cmp    eax,0xe3
+6b70ae6c:	89 14 85 1c 90 7a 6b 	mov    DWORD PTR [eax*4+0x6b7a901c],edx
+6b70ae73:	75 c1                	jne    0x6b70ae36
+6b70ae75:	8b 15 ac 93 7a 6b    	mov    edx,DWORD PTR ds:0x6b7a93ac
+6b70ae7b:	eb 05                	jmp    0x6b70ae82
+6b70ae7d:	8d 76 00             	lea    esi,[esi+0x0]
+6b70ae80:	89 da                	mov    edx,ebx
+6b70ae82:	83 c0 01             	add    eax,0x1
+6b70ae85:	81 e2 00 00 00 80    	and    edx,0x80000000
+6b70ae8b:	8b 1c 85 20 90 7a 6b 	mov    ebx,DWORD PTR [eax*4+0x6b7a9020]
+6b70ae92:	89 d9                	mov    ecx,ebx
+6b70ae94:	81 e1 ff ff ff 7f    	and    ecx,0x7fffffff
+6b70ae9a:	09 d1                	or     ecx,edx
+6b70ae9c:	89 ca                	mov    edx,ecx
+6b70ae9e:	83 e1 01             	and    ecx,0x1
+6b70aea1:	d1 ea                	shr    edx,1
+6b70aea3:	33 14 85 90 8c 7a 6b 	xor    edx,DWORD PTR [eax*4+0x6b7a8c90]
+6b70aeaa:	33 14 8d 7c 75 7a 6b 	xor    edx,DWORD PTR [ecx*4+0x6b7a757c]
+6b70aeb1:	3d 6f 02 00 00       	cmp    eax,0x26f
+6b70aeb6:	89 14 85 1c 90 7a 6b 	mov    DWORD PTR [eax*4+0x6b7a901c],edx
+6b70aebd:	75 c1                	jne    0x6b70ae80
+6b70aebf:	8b 0d 20 90 7a 6b    	mov    ecx,DWORD PTR ds:0x6b7a9020
+6b70aec5:	a1 dc 99 7a 6b       	mov    eax,ds:0x6b7a99dc
+6b70aeca:	89 ca                	mov    edx,ecx
+6b70aecc:	25 00 00 00 80       	and    eax,0x80000000
+6b70aed1:	81 e2 ff ff ff 7f    	and    edx,0x7fffffff
+6b70aed7:	09 c2                	or     edx,eax
+6b70aed9:	89 d0                	mov    eax,edx
+6b70aedb:	83 e2 01             	and    edx,0x1
+6b70aede:	d1 e8                	shr    eax,1
+6b70aee0:	33 05 50 96 7a 6b    	xor    eax,DWORD PTR ds:0x6b7a9650
+6b70aee6:	33 04 95 7c 75 7a 6b 	xor    eax,DWORD PTR [edx*4+0x6b7a757c]
+6b70aeed:	ba 01 00 00 00       	mov    edx,0x1
+6b70aef2:	a3 dc 99 7a 6b       	mov    ds:0x6b7a99dc,eax
+6b70aef7:	89 15 38 50 7a 6b    	mov    DWORD PTR ds:0x6b7a5038,edx
+6b70aefd:	89 ca                	mov    edx,ecx
+6b70aeff:	c1 ea 0b             	shr    edx,0xb
+6b70af02:	31 ca                	xor    edx,ecx
+6b70af04:	89 d0                	mov    eax,edx
+6b70af06:	c1 e0 07             	shl    eax,0x7
+6b70af09:	25 80 56 2c 9d       	and    eax,0x9d2c5680
+6b70af0e:	31 d0                	xor    eax,edx
+6b70af10:	89 c2                	mov    edx,eax
+6b70af12:	c1 e2 0f             	shl    edx,0xf
+6b70af15:	81 e2 00 00 c6 ef    	and    edx,0xefc60000
+6b70af1b:	31 c2                	xor    edx,eax
+6b70af1d:	89 d0                	mov    eax,edx
+6b70af1f:	c1 e8 12             	shr    eax,0x12
+6b70af22:	31 d0                	xor    eax,edx
+6b70af24:	5b                   	pop    ebx
+6b70af25:	c3                   	ret
+6b70af26:	8d 50 01             	lea    edx,[eax+0x1]
+6b70af29:	8b 0c 85 20 90 7a 6b 	mov    ecx,DWORD PTR [eax*4+0x6b7a9020]
+6b70af30:	eb c5                	jmp    0x6b70aef7
+6b70af32:	c7 05 20 90 7a 6b 71 	mov    DWORD PTR ds:0x6b7a9020,0x1571
+6b70af39:	15 00 00 
+6b70af3c:	b8 01 00 00 00       	mov    eax,0x1
+6b70af41:	b9 71 15 00 00       	mov    ecx,0x1571
+6b70af46:	89 ca                	mov    edx,ecx
+6b70af48:	c1 ea 1e             	shr    edx,0x1e
+6b70af4b:	31 ca                	xor    edx,ecx
+6b70af4d:	69 d2 65 89 07 6c    	imul   edx,edx,0x6c078965
+6b70af53:	8d 0c 10             	lea    ecx,[eax+edx*1]
+6b70af56:	89 0c 85 20 90 7a 6b 	mov    DWORD PTR [eax*4+0x6b7a9020],ecx
+6b70af5d:	83 c0 01             	add    eax,0x1
+6b70af60:	3d 70 02 00 00       	cmp    eax,0x270
+6b70af65:	75 df                	jne    0x6b70af46
+6b70af67:	e9 c0 fe ff ff       	jmp    0x6b70ae2c
+
+# precision normalization [0x6b7730bf, 0x6b773126)
+6b7730bf:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7730c6:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7730cd:	ff 
+6b7730ce:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7730d1:	e8 5a f5 02 00       	call   0x6b7a2630 ; lua_tonumber
+6b7730d6:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b7730dd:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b7730e4:	00 
+6b7730e5:	b4 0c                	mov    ah,0xc
+6b7730e7:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b7730ee:	00 
+6b7730ef:	b8 01 00 00 00       	mov    eax,0x1
+6b7730f4:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b7730fb:	db 9c 24 a8 00 00 00 	fistp  DWORD PTR [esp+0xa8]
+6b773102:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b773109:	8b 8c 24 a8 00 00 00 	mov    ecx,DWORD PTR [esp+0xa8]
+6b773110:	85 c9                	test   ecx,ecx
+6b773112:	0f 4f 84 24 a8 00 00 	cmovg  eax,DWORD PTR [esp+0xa8]
+6b773119:	00 
+6b77311a:	89 84 24 a8 00 00 00 	mov    DWORD PTR [esp+0xa8],eax
+6b773121:	e9 dd ee fb ff       	jmp    0x6b732003
+
+# main value conversion and callback capture [0x6b732003, 0x6b732b25)
+6b732003:	db 84 24 a8 00 00 00 	fild   DWORD PTR [esp+0xa8]
+6b73200a:	dd 94 24 68 03 00 00 	fst    QWORD PTR [esp+0x368]
+6b732011:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732018:	d8 3d cc 75 7a 6b    	fdivr  DWORD PTR ds:0x6b7a75cc
+6b73201e:	c7 44 24 08 f6 69 7a 	mov    DWORD PTR [esp+0x8],0x6b7a69f6 ; 'grav'
+6b732025:	6b 
+6b732026:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732029:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732030:	ff 
+6b732031:	dd 9c 24 b0 02 00 00 	fstp   QWORD PTR [esp+0x2b0]
+6b732038:	e8 d3 05 07 00       	call   0x6b7a2610 ; lua_getfield
+6b73203d:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732044:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73204b:	ff 
+6b73204c:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73204f:	e8 04 06 07 00       	call   0x6b7a2658 ; lua_type
+6b732054:	83 f8 05             	cmp    eax,0x5
+6b732057:	0f 84 d6 0f 04 00    	je     0x6b773033
+6b73205d:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732064:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73206b:	ff 
+6b73206c:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73206f:	e8 3c 06 07 00       	call   0x6b7a26b0 ; lua_isnumber
+6b732074:	85 c0                	test   eax,eax
+6b732076:	0f 85 86 0f 04 00    	jne    0x6b773002
+6b73207c:	d9 ee                	fldz
+6b73207e:	dd 54 24 70          	fst    QWORD PTR [esp+0x70]
+6b732082:	dd 9c 24 e8 00 00 00 	fstp   QWORD PTR [esp+0xe8]
+6b732089:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732090:	c7 44 24 08 fb 69 7a 	mov    DWORD PTR [esp+0x8],0x6b7a69fb ; 'ac'
+6b732097:	6b 
+6b732098:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b73209f:	ff 
+6b7320a0:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7320a3:	e8 68 05 07 00       	call   0x6b7a2610 ; lua_getfield
+6b7320a8:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7320af:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7320b6:	ff 
+6b7320b7:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7320ba:	e8 71 05 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b7320bf:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7320c6:	c7 44 24 08 fe 69 7a 	mov    DWORD PTR [esp+0x8],0x6b7a69fe ; 'plate'
+6b7320cd:	6b 
+6b7320ce:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7320d5:	ff 
+6b7320d6:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7320d9:	dd 05 d0 75 7a 6b    	fld    QWORD PTR ds:0x6b7a75d0
+6b7320df:	de c9                	fmulp  st(1),st
+6b7320e1:	dd 9c 24 00 01 00 00 	fstp   QWORD PTR [esp+0x100]
+6b7320e8:	e8 23 05 07 00       	call   0x6b7a2610 ; lua_getfield
+6b7320ed:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7320f4:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7320fb:	ff 
+6b7320fc:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7320ff:	e8 54 05 07 00       	call   0x6b7a2658 ; lua_type
+6b732104:	83 f8 05             	cmp    eax,0x5
+6b732107:	0f 84 d8 0d 04 00    	je     0x6b772ee5
+6b73210d:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732114:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73211b:	ff 
+6b73211c:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73211f:	e8 8c 05 07 00       	call   0x6b7a26b0 ; lua_isnumber
+6b732124:	c7 84 24 70 0e 00 00 	mov    DWORD PTR [esp+0xe70],0x2d0
+6b73212b:	d0 02 00 00 
+6b73212f:	c7 84 24 28 0e 00 00 	mov    DWORD PTR [esp+0xe28],0x500
+6b732136:	00 05 00 00 
+6b73213a:	85 c0                	test   eax,eax
+6b73213c:	0f 85 4b 0d 04 00    	jne    0x6b772e8d
+6b732142:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732149:	c7 44 24 08 04 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a04 ; 'throughf'
+6b732150:	6b 
+6b732151:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732158:	ff 
+6b732159:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73215c:	e8 af 04 07 00       	call   0x6b7a2610 ; lua_getfield
+6b732161:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732168:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73216f:	ff 
+6b732170:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732173:	e8 b8 04 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b732178:	c7 44 24 04 00 00 00 	mov    DWORD PTR [esp+0x4],0x0
+6b73217f:	00 
+6b732180:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b732187:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b73218e:	00 
+6b73218f:	b4 0c                	mov    ah,0xc
+6b732191:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b732198:	00 
+6b732199:	b8 00 00 00 00       	mov    eax,0x0
+6b73219e:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b7321a5:	db 9c 24 dc 14 00 00 	fistp  DWORD PTR [esp+0x14dc]
+6b7321ac:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b7321b3:	83 bc 24 dc 14 00 00 	cmp    DWORD PTR [esp+0x14dc],0x3
+6b7321ba:	03 
+6b7321bb:	0f 42 84 24 dc 14 00 	cmovb  eax,DWORD PTR [esp+0x14dc]
+6b7321c2:	00 
+6b7321c3:	89 84 24 dc 14 00 00 	mov    DWORD PTR [esp+0x14dc],eax
+6b7321ca:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7321d1:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7321d4:	e8 77 04 07 00       	call   0x6b7a2650 ; lua_settop
+6b7321d9:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7321e0:	c7 44 24 08 0d 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a0d ; 'ran'
+6b7321e7:	6b 
+6b7321e8:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7321ef:	ff 
+6b7321f0:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7321f3:	e8 18 04 07 00       	call   0x6b7a2610 ; lua_getfield
+6b7321f8:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7321ff:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732206:	ff 
+6b732207:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73220a:	e8 21 04 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b73220f:	c7 44 24 08 11 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a11 ; 'rotxyz'
+6b732216:	6b 
+6b732217:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b73221e:	ff 
+6b73221f:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b732226:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b73222d:	00 
+6b73222e:	b4 0c                	mov    ah,0xc
+6b732230:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b732237:	00 
+6b732238:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73223f:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b732246:	db 9c 24 7c 02 00 00 	fistp  DWORD PTR [esp+0x27c]
+6b73224d:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b732254:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732257:	e8 b4 03 07 00       	call   0x6b7a2610 ; lua_getfield
+6b73225c:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732263:	c7 44 24 08 00 00 00 	mov    DWORD PTR [esp+0x8],0x0
+6b73226a:	00 
+6b73226b:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732272:	ff 
+6b732273:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732276:	e8 15 04 07 00       	call   0x6b7a2690 ; lua_tolstring
+6b73227b:	89 c5                	mov    ebp,eax
+6b73227d:	0f b6 00             	movzx  eax,BYTE PTR [eax]
+6b732280:	3c 72                	cmp    al,0x72
+6b732282:	0f 84 79 3b 04 00    	je     0x6b775e01
+6b732288:	3c 7b                	cmp    al,0x7b
+6b73228a:	0f 84 ca 3a 04 00    	je     0x6b775d5a
+6b732290:	84 c0                	test   al,al
+6b732292:	74 1f                	je     0x6b7322b3
+6b732294:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73229b:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7322a2:	ff 
+6b7322a3:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7322a6:	e8 05 04 07 00       	call   0x6b7a26b0 ; lua_isnumber
+6b7322ab:	85 c0                	test   eax,eax
+6b7322ad:	0f 85 41 0f 04 00    	jne    0x6b7731f4
+6b7322b3:	d9 ee                	fldz
+6b7322b5:	dd 94 24 48 0d 00 00 	fst    QWORD PTR [esp+0xd48]
+6b7322bc:	dd 94 24 78 0d 00 00 	fst    QWORD PTR [esp+0xd78]
+6b7322c3:	c7 84 24 48 0b 00 00 	mov    DWORD PTR [esp+0xb48],0x0
+6b7322ca:	00 00 00 00 
+6b7322ce:	dd 9c 24 c8 0d 00 00 	fstp   QWORD PTR [esp+0xdc8]
+6b7322d5:	c7 84 24 a8 0b 00 00 	mov    DWORD PTR [esp+0xba8],0x0
+6b7322dc:	00 00 00 00 
+6b7322e0:	c7 84 24 6c 0b 00 00 	mov    DWORD PTR [esp+0xb6c],0x0
+6b7322e7:	00 00 00 00 
+6b7322eb:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7322f2:	c7 44 24 08 21 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a21 ; 'degvxyz'
+6b7322f9:	6b 
+6b7322fa:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732301:	ff 
+6b732302:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732305:	e8 06 03 07 00       	call   0x6b7a2610 ; lua_getfield
+6b73230a:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732311:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732318:	ff 
+6b732319:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73231c:	e8 37 03 07 00       	call   0x6b7a2658 ; lua_type
+6b732321:	83 f8 05             	cmp    eax,0x5
+6b732324:	0f 84 65 89 04 00    	je     0x6b77ac8f
+6b73232a:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732331:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732338:	ff 
+6b732339:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73233c:	e8 6f 03 07 00       	call   0x6b7a26b0 ; lua_isnumber
+6b732341:	85 c0                	test   eax,eax
+6b732343:	0f 85 15 89 04 00    	jne    0x6b77ac5e
+6b732349:	d9 ee                	fldz
+6b73234b:	dd 94 24 40 0f 00 00 	fst    QWORD PTR [esp+0xf40]
+6b732352:	dd 94 24 38 0f 00 00 	fst    QWORD PTR [esp+0xf38]
+6b732359:	dd 9c 24 d0 0e 00 00 	fstp   QWORD PTR [esp+0xed0]
+6b732360:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732367:	c7 44 24 08 29 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a29 ; 'revrot'
+6b73236e:	6b 
+6b73236f:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732376:	ff 
+6b732377:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73237a:	e8 91 02 07 00       	call   0x6b7a2610 ; lua_getfield
+6b73237f:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732386:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73238d:	ff 
+6b73238e:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732391:	e8 9a 02 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b732396:	c7 44 24 08 30 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a30 ; 'palpha'
+6b73239d:	6b 
+6b73239e:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7323a5:	ff 
+6b7323a6:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b7323ad:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b7323b4:	00 
+6b7323b5:	b4 0c                	mov    ah,0xc
+6b7323b7:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b7323be:	00 
+6b7323bf:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7323c6:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b7323cd:	db 9c 24 18 0e 00 00 	fistp  DWORD PTR [esp+0xe18]
+6b7323d4:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b7323db:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7323de:	e8 2d 02 07 00       	call   0x6b7a2610 ; lua_getfield
+6b7323e3:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7323ea:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7323f1:	ff 
+6b7323f2:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7323f5:	e8 5e 02 07 00       	call   0x6b7a2658 ; lua_type
+6b7323fa:	83 f8 05             	cmp    eax,0x5
+6b7323fd:	0f 84 c8 87 04 00    	je     0x6b77abcb
+6b732403:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73240a:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732411:	ff 
+6b732412:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732415:	e8 96 02 07 00       	call   0x6b7a26b0 ; lua_isnumber
+6b73241a:	85 c0                	test   eax,eax
+6b73241c:	0f 85 75 87 04 00    	jne    0x6b77ab97
+6b732422:	d9 e8                	fld1
+6b732424:	dd 94 24 d8 0d 00 00 	fst    QWORD PTR [esp+0xdd8]
+6b73242b:	dd 9c 24 d0 0d 00 00 	fstp   QWORD PTR [esp+0xdd0]
+6b732432:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732439:	c7 44 24 08 37 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a37 ; 'pzoom'
+6b732440:	6b 
+6b732441:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732448:	ff 
+6b732449:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73244c:	e8 bf 01 07 00       	call   0x6b7a2610 ; lua_getfield
+6b732451:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732458:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73245f:	ff 
+6b732460:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732463:	e8 f0 01 07 00       	call   0x6b7a2658 ; lua_type
+6b732468:	83 f8 05             	cmp    eax,0x5
+6b73246b:	0f 84 43 66 04 00    	je     0x6b778ab4
+6b732471:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732478:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73247f:	ff 
+6b732480:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732483:	e8 28 02 07 00       	call   0x6b7a26b0 ; lua_isnumber
+6b732488:	85 c0                	test   eax,eax
+6b73248a:	0f 85 d9 65 04 00    	jne    0x6b778a69
+6b732490:	d9 e8                	fld1
+6b732492:	dd 94 24 e0 0d 00 00 	fst    QWORD PTR [esp+0xde0]
+6b732499:	dd 9c 24 80 0d 00 00 	fstp   QWORD PTR [esp+0xd80]
+6b7324a0:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7324a7:	bf 00 00 00 00       	mov    edi,0x0
+6b7324ac:	c7 44 24 08 3d 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a3d ; 'pvanish'
+6b7324b3:	6b 
+6b7324b4:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7324bb:	ff 
+6b7324bc:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7324bf:	e8 4c 01 07 00       	call   0x6b7a2610 ; lua_getfield
+6b7324c4:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7324cb:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7324d2:	ff 
+6b7324d3:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7324d6:	e8 55 01 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b7324db:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7324e2:	c7 44 24 04 00 00 00 	mov    DWORD PTR [esp+0x4],0x0
+6b7324e9:	00 
+6b7324ea:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7324ed:	dd 9c 24 30 0f 00 00 	fstp   QWORD PTR [esp+0xf30]
+6b7324f4:	e8 57 01 07 00       	call   0x6b7a2650 ; lua_settop
+6b7324f9:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732500:	c7 44 24 08 72 60 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6072 ; 'obj'
+6b732507:	6b 
+6b732508:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b73250f:	ff 
+6b732510:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732513:	e8 f8 00 07 00       	call   0x6b7a2610 ; lua_getfield
+6b732518:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73251f:	c7 44 24 08 8c 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a618c ; 'totaltime'
+6b732526:	6b 
+6b732527:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b73252e:	00 
+6b73252f:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732532:	e8 d9 00 07 00       	call   0x6b7a2610 ; lua_getfield
+6b732537:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73253e:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732545:	ff 
+6b732546:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732549:	e8 e2 00 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b73254e:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732555:	c7 44 24 08 05 63 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6305 ; 'time'
+6b73255c:	6b 
+6b73255d:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732564:	00 
+6b732565:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732568:	dd 9c 24 a8 12 00 00 	fstp   QWORD PTR [esp+0x12a8]
+6b73256f:	e8 9c 00 07 00       	call   0x6b7a2610 ; lua_getfield
+6b732574:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73257b:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732582:	ff 
+6b732583:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732586:	e8 a5 00 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b73258b:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732592:	c7 44 24 08 76 60 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6076 ; 'framerate'
+6b732599:	6b 
+6b73259a:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7325a1:	00 
+6b7325a2:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7325a5:	dd 9c 24 d8 0e 00 00 	fstp   QWORD PTR [esp+0xed8]
+6b7325ac:	e8 5f 00 07 00       	call   0x6b7a2610 ; lua_getfield
+6b7325b1:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7325b8:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7325bf:	ff 
+6b7325c0:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7325c3:	e8 68 00 07 00       	call   0x6b7a2630 ; lua_tonumber
+6b7325c8:	c7 44 24 08 5e 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a615e ; 'layer'
+6b7325cf:	6b 
+6b7325d0:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7325d7:	00 
+6b7325d8:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b7325df:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b7325e6:	00 
+6b7325e7:	b4 0c                	mov    ah,0xc
+6b7325e9:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b7325f0:	00 
+6b7325f1:	a1 cc 75 7a 6b       	mov    eax,ds:0x6b7a75cc
+6b7325f6:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b7325fd:	db 9c 24 2c 19 00 00 	fistp  DWORD PTR [esp+0x192c]
+6b732604:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b73260b:	8b 9c 24 2c 19 00 00 	mov    ebx,DWORD PTR [esp+0x192c]
+6b732612:	89 84 24 b0 00 00 00 	mov    DWORD PTR [esp+0xb0],eax
+6b732619:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732620:	89 9c 24 2c 19 00 00 	mov    DWORD PTR [esp+0x192c],ebx
+6b732627:	db 84 24 2c 19 00 00 	fild   DWORD PTR [esp+0x192c]
+6b73262e:	dd 94 24 d0 07 00 00 	fst    QWORD PTR [esp+0x7d0]
+6b732635:	d9 84 24 b0 00 00 00 	fld    DWORD PTR [esp+0xb0]
+6b73263c:	de f1                	fdivrp st(1),st
+6b73263e:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732641:	dd 9c 24 90 12 00 00 	fstp   QWORD PTR [esp+0x1290]
+6b732648:	e8 c3 ff 06 00       	call   0x6b7a2610 ; lua_getfield
+6b73264d:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732654:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73265b:	ff 
+6b73265c:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73265f:	e8 cc ff 06 00       	call   0x6b7a2630 ; lua_tonumber
+6b732664:	c7 44 24 08 64 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6164 ; 'track0'
+6b73266b:	6b 
+6b73266c:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732673:	00 
+6b732674:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b73267b:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b732682:	00 
+6b732683:	b4 0c                	mov    ah,0xc
+6b732685:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b73268c:	00 
+6b73268d:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732694:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b73269b:	db 9c 24 20 03 00 00 	fistp  DWORD PTR [esp+0x320]
+6b7326a2:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b7326a9:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7326ac:	e8 5f ff 06 00       	call   0x6b7a2610 ; lua_getfield
+6b7326b1:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7326b8:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7326bf:	ff 
+6b7326c0:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7326c3:	e8 68 ff 06 00       	call   0x6b7a2630 ; lua_tonumber
+6b7326c8:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7326cf:	c7 44 24 08 57 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6157 ; 'track1'
+6b7326d6:	6b 
+6b7326d7:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7326de:	00 
+6b7326df:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7326e2:	dd 9c 24 58 0e 00 00 	fstp   QWORD PTR [esp+0xe58]
+6b7326e9:	e8 22 ff 06 00       	call   0x6b7a2610 ; lua_getfield
+6b7326ee:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7326f5:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7326fc:	ff 
+6b7326fd:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732700:	e8 2b ff 06 00       	call   0x6b7a2630 ; lua_tonumber
+6b732705:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73270c:	c7 44 24 08 9c 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a619c ; 'track2'
+6b732713:	6b 
+6b732714:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b73271b:	00 
+6b73271c:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73271f:	d8 3d ec 75 7a 6b    	fdivr  DWORD PTR ds:0x6b7a75ec
+6b732725:	dd 9c 24 c8 00 00 00 	fstp   QWORD PTR [esp+0xc8]
+6b73272c:	e8 df fe 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732731:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732738:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b73273f:	ff 
+6b732740:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732743:	e8 e8 fe 06 00       	call   0x6b7a2630 ; lua_tonumber
+6b732748:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73274f:	c7 44 24 08 92 60 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6092 ; 'track3'
+6b732756:	6b 
+6b732757:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b73275e:	00 
+6b73275f:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732762:	d9 e0                	fchs
+6b732764:	dd 05 10 77 7a 6b    	fld    QWORD PTR ds:0x6b7a7710
+6b73276a:	de c9                	fmulp  st(1),st
+6b73276c:	dd 9c 24 d0 14 00 00 	fstp   QWORD PTR [esp+0x14d0]
+6b732773:	e8 98 fe 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732778:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73277f:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b732786:	ff 
+6b732787:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73278a:	e8 a1 fe 06 00       	call   0x6b7a2630 ; lua_tonumber
+6b73278f:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732796:	c7 44 24 08 8b 60 7a 	mov    DWORD PTR [esp+0x8],0x6b7a608b ; 'check0'
+6b73279d:	6b 
+6b73279e:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7327a5:	00 
+6b7327a6:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7327a9:	dd 05 d0 77 7a 6b    	fld    QWORD PTR ds:0x6b7a77d0
+6b7327af:	de c9                	fmulp  st(1),st
+6b7327b1:	dd 9c 24 48 16 00 00 	fstp   QWORD PTR [esp+0x1648]
+6b7327b8:	e8 53 fe 06 00       	call   0x6b7a2610 ; lua_getfield
+6b7327bd:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7327c4:	c7 44 24 04 ff ff ff 	mov    DWORD PTR [esp+0x4],0xffffffff
+6b7327cb:	ff 
+6b7327cc:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7327cf:	e8 64 fe 06 00       	call   0x6b7a2638 ; lua_toboolean
+6b7327d4:	8b 94 24 7c 02 00 00 	mov    edx,DWORD PTR [esp+0x27c]
+6b7327db:	c7 44 24 08 34 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6134 ; 'draw'
+6b7327e2:	6b 
+6b7327e3:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7327ea:	00 
+6b7327eb:	89 84 24 f4 18 00 00 	mov    DWORD PTR [esp+0x18f4],eax
+6b7327f2:	8b 84 24 a8 00 00 00 	mov    eax,DWORD PTR [esp+0xa8]
+6b7327f9:	0f af c3             	imul   eax,ebx
+6b7327fc:	85 d2                	test   edx,edx
+6b7327fe:	0f 49 bc 24 20 03 00 	cmovns edi,DWORD PTR [esp+0x320]
+6b732805:	00 
+6b732806:	89 84 24 2c 19 00 00 	mov    DWORD PTR [esp+0x192c],eax
+6b73280d:	a1 cc 75 7a 6b       	mov    eax,ds:0x6b7a75cc
+6b732812:	db 84 24 2c 19 00 00 	fild   DWORD PTR [esp+0x192c]
+6b732819:	dd 94 24 68 07 00 00 	fst    QWORD PTR [esp+0x768]
+6b732820:	89 bc 24 28 02 00 00 	mov    DWORD PTR [esp+0x228],edi
+6b732827:	89 84 24 a8 00 00 00 	mov    DWORD PTR [esp+0xa8],eax
+6b73282e:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732835:	d9 84 24 a8 00 00 00 	fld    DWORD PTR [esp+0xa8]
+6b73283c:	de f1                	fdivrp st(1),st
+6b73283e:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732841:	dd 94 24 f0 01 00 00 	fst    QWORD PTR [esp+0x1f0]
+6b732848:	dd 84 24 58 0e 00 00 	fld    QWORD PTR [esp+0xe58]
+6b73284f:	d8 c9                	fmul   st,st(1)
+6b732851:	dd 9c 24 58 0e 00 00 	fstp   QWORD PTR [esp+0xe58]
+6b732858:	dd 84 24 b0 02 00 00 	fld    QWORD PTR [esp+0x2b0]
+6b73285f:	de c9                	fmulp  st(1),st
+6b732861:	dd 94 24 b0 00 00 00 	fst    QWORD PTR [esp+0xb0]
+6b732868:	dd 84 24 00 01 00 00 	fld    QWORD PTR [esp+0x100]
+6b73286f:	d8 c9                	fmul   st,st(1)
+6b732871:	dd 9c 24 20 10 00 00 	fstp   QWORD PTR [esp+0x1020]
+6b732878:	dd 84 24 e8 00 00 00 	fld    QWORD PTR [esp+0xe8]
+6b73287f:	d8 c9                	fmul   st,st(1)
+6b732881:	dd 9c 24 d0 13 00 00 	fstp   QWORD PTR [esp+0x13d0]
+6b732888:	dd 44 24 70          	fld    QWORD PTR [esp+0x70]
+6b73288c:	de c9                	fmulp  st(1),st
+6b73288e:	dd 9c 24 d8 13 00 00 	fstp   QWORD PTR [esp+0x13d8]
+6b732895:	e8 76 fd 06 00       	call   0x6b7a2610 ; lua_getfield
+6b73289a:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7328a1:	c7 44 24 08 45 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a45 ; 'pdraw'
+6b7328a8:	6b 
+6b7328a9:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7328b0:	ff 
+6b7328b1:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7328b4:	e8 bf fd 06 00       	call   0x6b7a2678 ; lua_setfield
+6b7328b9:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7328c0:	c7 44 24 08 f9 62 7a 	mov    DWORD PTR [esp+0x8],0x6b7a62f9 ; 'drawpoly'
+6b7328c7:	6b 
+6b7328c8:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7328cf:	00 
+6b7328d0:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7328d3:	e8 38 fd 06 00       	call   0x6b7a2610 ; lua_getfield
+6b7328d8:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7328df:	c7 44 24 08 68 60 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6068 ; 'pdrawpoly'
+6b7328e6:	6b 
+6b7328e7:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7328ee:	ff 
+6b7328ef:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7328f2:	e8 81 fd 06 00       	call   0x6b7a2678 ; lua_setfield
+6b7328f7:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7328fe:	c7 44 24 08 99 60 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6099 ; 'getvalue'
+6b732905:	6b 
+6b732906:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b73290d:	00 
+6b73290e:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732911:	e8 fa fc 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732916:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73291d:	c7 44 24 08 4e 67 7a 	mov    DWORD PTR [esp+0x8],0x6b7a674e ; 'pgetvalue'
+6b732924:	6b 
+6b732925:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b73292c:	ff 
+6b73292d:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732930:	e8 43 fd 06 00       	call   0x6b7a2678 ; lua_setfield
+6b732935:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73293c:	c7 44 24 08 39 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6139 ; 'copybuffer'
+6b732943:	6b 
+6b732944:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b73294b:	00 
+6b73294c:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73294f:	e8 bc fc 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732954:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73295b:	c7 44 24 08 4b 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a4b ; 'pcopybuffer'
+6b732962:	6b 
+6b732963:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b73296a:	ff 
+6b73296b:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73296e:	e8 05 fd 06 00       	call   0x6b7a2678 ; lua_setfield
+6b732973:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b73297a:	c7 44 24 08 22 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6122 ; 'setoption'
+6b732981:	6b 
+6b732982:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732989:	00 
+6b73298a:	89 04 24             	mov    DWORD PTR [esp],eax
+6b73298d:	e8 7e fc 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732992:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732999:	c7 44 24 08 57 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a57 ; 'psetoption'
+6b7329a0:	6b 
+6b7329a1:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7329a8:	ff 
+6b7329a9:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7329ac:	e8 c7 fc 06 00       	call   0x6b7a2678 ; lua_setfield
+6b7329b1:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7329b8:	c7 44 24 08 1c 62 7a 	mov    DWORD PTR [esp+0x8],0x6b7a621c ; 'getoption'
+6b7329bf:	6b 
+6b7329c0:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b7329c7:	00 
+6b7329c8:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7329cb:	e8 40 fc 06 00       	call   0x6b7a2610 ; lua_getfield
+6b7329d0:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7329d7:	c7 44 24 08 62 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a62 ; 'pgetoption'
+6b7329de:	6b 
+6b7329df:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b7329e6:	ff 
+6b7329e7:	89 04 24             	mov    DWORD PTR [esp],eax
+6b7329ea:	e8 89 fc 06 00       	call   0x6b7a2678 ; lua_setfield
+6b7329ef:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b7329f6:	c7 44 24 08 51 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6151 ; 'load'
+6b7329fd:	6b 
+6b7329fe:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732a05:	00 
+6b732a06:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732a09:	e8 02 fc 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732a0e:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732a15:	c7 44 24 08 6d 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a6d ; 'pload'
+6b732a1c:	6b 
+6b732a1d:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732a24:	ff 
+6b732a25:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732a28:	e8 4b fc 06 00       	call   0x6b7a2678 ; lua_setfield
+6b732a2d:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732a34:	c7 44 24 08 9d 62 7a 	mov    DWORD PTR [esp+0x8],0x6b7a629d ; 'setfont'
+6b732a3b:	6b 
+6b732a3c:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732a43:	00 
+6b732a44:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732a47:	e8 c4 fb 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732a4c:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732a53:	c7 44 24 08 73 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a73 ; 'psetfont'
+6b732a5a:	6b 
+6b732a5b:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732a62:	ff 
+6b732a63:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732a66:	e8 0d fc 06 00       	call   0x6b7a2678 ; lua_setfield
+6b732a6b:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732a72:	c7 44 24 08 7c 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a7c ; 'effect'
+6b732a79:	6b 
+6b732a7a:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732a81:	00 
+6b732a82:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732a85:	e8 86 fb 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732a8a:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732a91:	c7 44 24 08 1b 64 7a 	mov    DWORD PTR [esp+0x8],0x6b7a641b ; 'peffect'
+6b732a98:	6b 
+6b732a99:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732aa0:	ff 
+6b732aa1:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732aa4:	e8 cf fb 06 00       	call   0x6b7a2678 ; lua_setfield
+6b732aa9:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732ab0:	c7 44 24 08 44 61 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6144 ; 'getpixeldata'
+6b732ab7:	6b 
+6b732ab8:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732abf:	00 
+6b732ac0:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732ac3:	e8 48 fb 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732ac8:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732acf:	c7 44 24 08 40 67 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6740 ; 'pgetpixeldata'
+6b732ad6:	6b 
+6b732ad7:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732ade:	ff 
+6b732adf:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732ae2:	e8 91 fb 06 00       	call   0x6b7a2678 ; lua_setfield
+6b732ae7:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732aee:	c7 44 24 08 7d 62 7a 	mov    DWORD PTR [esp+0x8],0x6b7a627d ; 'interpolation'
+6b732af5:	6b 
+6b732af6:	c7 44 24 04 01 00 00 	mov    DWORD PTR [esp+0x4],0x1
+6b732afd:	00 
+6b732afe:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732b01:	e8 0a fb 06 00       	call   0x6b7a2610 ; lua_getfield
+6b732b06:	8b 84 24 b0 19 00 00 	mov    eax,DWORD PTR [esp+0x19b0]
+6b732b0d:	c7 44 24 08 83 6a 7a 	mov    DWORD PTR [esp+0x8],0x6b7a6a83 ; 'pinterpolation'
+6b732b14:	6b 
+6b732b15:	c7 44 24 04 ee d8 ff 	mov    DWORD PTR [esp+0x4],0xffffd8ee
+6b732b1c:	ff 
+6b732b1d:	89 04 24             	mov    DWORD PTR [esp],eax
+6b732b20:	e8 53 fb 06 00       	call   0x6b7a2678 ; lua_setfield
+
+# seed mixing and init [0x6b733c57, 0x6b733d68)
+6b733c57:	8b 84 24 28 02 00 00 	mov    eax,DWORD PTR [esp+0x228]
+6b733c5e:	0f af c0             	imul   eax,eax
+6b733c61:	dd 84 24 28 05 00 00 	fld    QWORD PTR [esp+0x528]
+6b733c68:	dc b4 24 c8 00 00 00 	fdiv   QWORD PTR [esp+0xc8]
+6b733c6f:	69 d0 6d 0a e3 05    	imul   edx,eax,0x5e30a6d
+6b733c75:	69 84 24 28 02 00 00 	imul   eax,DWORD PTR [esp+0x228],0x871e4b
+6b733c7c:	4b 1e 87 00 
+6b733c80:	0f af 84 24 7c 02 00 	imul   eax,DWORD PTR [esp+0x27c]
+6b733c87:	00 
+6b733c88:	0f af 94 24 28 02 00 	imul   edx,DWORD PTR [esp+0x228]
+6b733c8f:	00 
+6b733c90:	d9 bc 24 2a 19 00 00 	fnstcw WORD PTR [esp+0x192a]
+6b733c97:	01 c2                	add    edx,eax
+6b733c99:	8b 84 24 7c 02 00 00 	mov    eax,DWORD PTR [esp+0x27c]
+6b733ca0:	0f af c0             	imul   eax,eax
+6b733ca3:	69 c0 95 51 7a 07    	imul   eax,eax,0x77a5195
+6b733ca9:	0f af 84 24 7c 02 00 	imul   eax,DWORD PTR [esp+0x27c]
+6b733cb0:	00 
+6b733cb1:	01 d0                	add    eax,edx
+6b733cb3:	89 84 24 28 02 00 00 	mov    DWORD PTR [esp+0x228],eax
+6b733cba:	05 dd 81 01 00       	add    eax,0x181dd
+6b733cbf:	89 84 24 7c 02 00 00 	mov    DWORD PTR [esp+0x27c],eax
+6b733cc6:	0f b7 84 24 2a 19 00 	movzx  eax,WORD PTR [esp+0x192a]
+6b733ccd:	00 
+6b733cce:	b4 0c                	mov    ah,0xc
+6b733cd0:	66 89 84 24 28 19 00 	mov    WORD PTR [esp+0x1928],ax
+6b733cd7:	00 
+6b733cd8:	d9 ac 24 28 19 00 00 	fldcw  WORD PTR [esp+0x1928]
+6b733cdf:	db 9c 24 2c 19 00 00 	fistp  DWORD PTR [esp+0x192c]
+6b733ce6:	d9 ac 24 2a 19 00 00 	fldcw  WORD PTR [esp+0x192a]
+6b733ced:	8b 9c 24 2c 19 00 00 	mov    ebx,DWORD PTR [esp+0x192c]
+6b733cf4:	85 db                	test   ebx,ebx
+6b733cf6:	0f 8e 69 ef 04 00    	jle    0x6b782c65
+6b733cfc:	dd 84 24 c8 00 00 00 	fld    QWORD PTR [esp+0xc8]
+6b733d03:	d8 3d ec 75 7a 6b    	fdivr  DWORD PTR ds:0x6b7a75ec
+6b733d09:	8b 84 24 7c 02 00 00 	mov    eax,DWORD PTR [esp+0x27c]
+6b733d10:	89 84 24 a8 00 00 00 	mov    DWORD PTR [esp+0xa8],eax
+6b733d17:	89 c2                	mov    edx,eax
+6b733d19:	a3 20 90 7a 6b       	mov    ds:0x6b7a9020,eax
+6b733d1e:	dd 9c 24 88 00 00 00 	fstp   QWORD PTR [esp+0x88]
+6b733d25:	b9 01 00 00 00       	mov    ecx,0x1
+6b733d2a:	eb 02                	jmp    0x6b733d2e
+6b733d2c:	89 c2                	mov    edx,eax
+6b733d2e:	89 d0                	mov    eax,edx
+6b733d30:	c1 e8 1e             	shr    eax,0x1e
+6b733d33:	31 d0                	xor    eax,edx
+6b733d35:	69 c0 65 89 07 6c    	imul   eax,eax,0x6c078965
+6b733d3b:	01 c8                	add    eax,ecx
+6b733d3d:	89 04 8d 20 90 7a 6b 	mov    DWORD PTR [ecx*4+0x6b7a9020],eax
+6b733d44:	83 c1 01             	add    ecx,0x1
+6b733d47:	81 f9 70 02 00 00    	cmp    ecx,0x270
+6b733d4d:	75 dd                	jne    0x6b733d2c
+6b733d4f:	8d 04 dd 00 00 00 00 	lea    eax,[ebx*8+0x0]
+6b733d56:	89 04 24             	mov    DWORD PTR [esp],eax
+6b733d59:	c7 05 38 50 7a 6b 70 	mov    DWORD PTR ds:0x6b7a5038,0x270
+6b733d60:	02 00 00 
+6b733d63:	e8 78 02 07 00       	call   0x6b7a3fe0

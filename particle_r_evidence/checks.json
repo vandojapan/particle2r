@@ -1,0 +1,9 @@
+{
+  "effects": 32,
+  "lua_registered_functions": 6,
+  "files": 185,
+  "dll_calls_resolve": true,
+  "has_32_distinct_effects": true,
+  "runtime_tested": false,
+  "rust_built": false
+}

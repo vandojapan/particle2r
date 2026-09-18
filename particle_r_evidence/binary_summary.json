@@ -1,0 +1,124 @@
+{
+  "zip_sha256": "df0c99747a3aa67ae82242fa50aa7e159158588cd0dd40765c2c235b42c2e80b",
+  "dll_sha256": "4a7b00013f819c83bc4f908d4b3f76c0cc469f5db795b6b0de127b9a74d51664",
+  "dll_bytes": 702990,
+  "machine": "0x14c",
+  "optional_header_magic": "0x10b",
+  "image_base": "0x6b700000",
+  "sections": [
+    {
+      "name": ".text",
+      "rva": 4096,
+      "virtual_size": 669876,
+      "raw_size": 670208,
+      "file_offset": 1024
+    },
+    {
+      "name": ".data",
+      "rva": 675840,
+      "virtual_size": 72,
+      "raw_size": 512,
+      "file_offset": 671232
+    },
+    {
+      "name": ".rdata",
+      "rva": 679936,
+      "virtual_size": 7464,
+      "raw_size": 7680,
+      "file_offset": 671744
+    },
+    {
+      "name": "/4",
+      "rva": 688128,
+      "virtual_size": 3000,
+      "raw_size": 3072,
+      "file_offset": 679424
+    },
+    {
+      "name": ".bss",
+      "rva": 692224,
+      "virtual_size": 2608,
+      "raw_size": 0,
+      "file_offset": 0
+    },
+    {
+      "name": ".edata",
+      "rva": 696320,
+      "virtual_size": 90,
+      "raw_size": 512,
+      "file_offset": 682496
+    },
+    {
+      "name": ".idata",
+      "rva": 700416,
+      "virtual_size": 2160,
+      "raw_size": 2560,
+      "file_offset": 683008
+    },
+    {
+      "name": ".CRT",
+      "rva": 704512,
+      "virtual_size": 24,
+      "raw_size": 512,
+      "file_offset": 685568
+    },
+    {
+      "name": ".tls",
+      "rva": 708608,
+      "virtual_size": 32,
+      "raw_size": 512,
+      "file_offset": 686080
+    },
+    {
+      "name": ".reloc",
+      "rva": 712704,
+      "virtual_size": 16064,
+      "raw_size": 16384,
+      "file_offset": 686592
+    }
+  ],
+  "lua_functions": [
+    {
+      "name": "timefunc",
+      "rva": "0x8430",
+      "va": "0x6b708430"
+    },
+    {
+      "name": "gridfunc",
+      "rva": "0x2710",
+      "va": "0x6b702710"
+    },
+    {
+      "name": "linefunc",
+      "rva": "0x3080",
+      "va": "0x6b703080"
+    },
+    {
+      "name": "windfunc",
+      "rva": "0x54d0",
+      "va": "0x6b7054d0"
+    },
+    {
+      "name": "concenfunc",
+      "rva": "0x1280",
+      "va": "0x6b701280"
+    },
+    {
+      "name": "func",
+      "rva": "0x31dd0",
+      "va": "0x6b731dd0"
+    }
+  ],
+  "file_count": 185,
+  "counts_by_suffix": {
+    ".anm": 3,
+    ".ini": 1,
+    ".exe": 3,
+    ".txt": 78,
+    ".dll": 1,
+    ".png": 10,
+    ".exa": 56,
+    ".exo": 11,
+    ".aup": 22
+  }
+}

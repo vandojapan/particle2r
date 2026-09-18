@@ -1,0 +1,7 @@
+[workspace]
+members = ["crates/particle-core", "crates/particle-aviutl2"]
+resolver = "2"
+
+[workspace.package]
+version = "0.2.1"
+edition = "2024"

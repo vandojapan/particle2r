@@ -1,0 +1,12 @@
+[package]
+name = "particle-aviutl2"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+aviutl2 = { version = "=0.46.1", default-features = false, features = ["filter", "generic", "serde"] }
+particle-core = { path = "../particle-core" }
+
