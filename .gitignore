@@ -1,5 +1,17 @@
 # AviUtl2 CLI
-/.aviutl2-cli
-/release
+/.aviutl2-cli/
+# 開発用ポータブル版
+/.aviutl2-cli/development/
+/*portable/
+/*-portable.zip
+
+# 元のパーティクル配布 ZIP
+/パーティクル(R).zip
+/Particle_R_Analysis_Evidence.zip
+
+# リリース配布用 ZIP
+/release/
+/release/*.zip
 /target
 /.tools
+
