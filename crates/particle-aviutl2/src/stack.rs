@@ -159,13 +159,18 @@ impl Kind {
         legacy_ui::schema(self.original_index()).name
     }
 
-    fn registered_name(self) -> &'static str {
-        // AviUtl2 already owns effects named 「回転」 and 「テキスト」.  The
-        // host rejects exact duplicate keys, so only those two need a suffix.
+    fn registered_name(self) -> String {
+        format!("{}{}", self.name(), crate::PARTICLE_SCRIPT_SUFFIX)
+    }
+
+    fn previous_registered_name(self) -> &'static str {
+        // Keep projects created by beta.2 readable after the script suffix is
+        // added. These were only used for the two names colliding with the
+        // AviUtl2 standard effects.
         match self {
             Self::Rotation => "回転 [パーティクル(R)]",
             Self::Text => "テキスト [パーティクル(R)]",
-            _ => self.name(),
+            _ => "",
         }
     }
 
@@ -190,9 +195,12 @@ impl Kind {
     }
 
     fn from_name(name: &str) -> Option<Self> {
-        Self::ALL
-            .into_iter()
-            .find(|kind| kind.registered_name() == name)
+        Self::ALL.into_iter().find(|kind| {
+            let previous = kind.previous_registered_name();
+            kind.name() == name
+                || kind.registered_name() == name
+                || (!previous.is_empty() && previous == name)
+        })
     }
 
     fn from_dll_path() -> Option<Self> {
@@ -241,7 +249,7 @@ impl FilterPlugin for StackBasicFilter {
     }
     fn plugin_info(&self) -> FilterPluginTable {
         FilterPluginTable {
-            name: BASIC_NAME.to_string(),
+            name: format!("{}{}", BASIC_NAME, crate::PARTICLE_SCRIPT_SUFFIX),
             label: Some(crate::PARTICLE_LABEL.to_string()),
             information: "パーティクル(R) ver3.54B の本体名・設定名に合わせた移植。本体より上に拡張効果を追加します。"
                 .to_string(),
@@ -287,7 +295,7 @@ impl FilterPlugin for StackExtensionFilter {
     fn plugin_info(&self) -> FilterPluginTable {
         let items = legacy_ui::config_items(self.kind.original_index());
         FilterPluginTable {
-            name: self.kind.registered_name().to_string(),
+            name: self.kind.registered_name(),
             label: Some(crate::PARTICLE_LABEL.to_string()),
             information: format!(
                 "パーティクル(R) ver3.54B の拡張効果。{} より上に置きます。解説記事の第{}回と同じ効果名・設定名です。未移植の処理を含みます。",
@@ -618,7 +626,8 @@ fn apply_extensions(video: &mut FilterProcVideo<()>, ui: &mut FilterConfig) -> S
                 }
             }
         }
-        if name == BASIC_NAME {
+        if name == BASIC_NAME || name == format!("{}{}", BASIC_NAME, crate::PARTICLE_SCRIPT_SUFFIX)
+        {
             break;
         }
         let Some(kind) = Kind::from_name(&name) else {
@@ -1013,6 +1022,12 @@ mod tests {
 
     #[test]
     fn every_original_extension_has_a_unique_plugin() {
+        assert_eq!(Kind::from_name("パス@particle2r"), Some(Kind::Path));
+        assert_eq!(Kind::from_name("パス"), Some(Kind::Path));
+        assert_eq!(
+            Kind::from_name("回転 [パーティクル(R)]"),
+            Some(Kind::Rotation)
+        );
         let mut names = std::collections::HashSet::new();
         let mut keys = std::collections::HashSet::new();
         for kind in Kind::ALL {
@@ -1021,6 +1036,8 @@ mod tests {
             assert!((3..=13).contains(&kind.article_chapter()));
             let info = StackExtensionFilter { kind }.plugin_info();
             assert_eq!(info.label.as_deref(), Some(crate::PARTICLE_LABEL));
+            assert_eq!(info.name, kind.registered_name());
+            assert!(info.name.ends_with(crate::PARTICLE_SCRIPT_SUFFIX));
             let items = info.config_items;
             assert!(!items.is_empty(), "{} has no controls", kind.name());
             assert_eq!(kind.name(), legacy_ui::schema(kind.original_index()).name);
@@ -1028,6 +1045,10 @@ mod tests {
         assert_eq!(names.len(), 31);
         let basic_info = StackBasicFilter.plugin_info();
         assert_eq!(basic_info.label.as_deref(), Some(crate::PARTICLE_LABEL));
+        assert_eq!(
+            basic_info.name,
+            format!("{}{}", BASIC_NAME, crate::PARTICLE_SCRIPT_SUFFIX)
+        );
         let basic = basic_info.config_items;
         assert!(item_track(&basic, "出力速度").is_some());
         assert_eq!(item_check(&basic, "終了時に消える"), Some(false));

@@ -23,6 +23,7 @@ use std::{
 };
 
 const PARTICLE_LABEL: &str = "パーティクル(R)";
+pub(crate) const PARTICLE_SCRIPT_SUFFIX: &str = "@particle2r";
 
 mod legacy_ui;
 mod p4_audio;
@@ -595,7 +596,7 @@ impl FilterPlugin for ParticleFilter {
         // A dedicated stack avoids overflowing AviUtl2's initialization thread.
         let config_items = build_config_items();
         FilterPluginTable {
-            name: "パーティクル(R) 基本版".to_string(),
+            name: format!("パーティクル(R) 基本版{}", PARTICLE_SCRIPT_SUFFIX),
             label: Some(PARTICLE_LABEL.to_string()),
             information: format!(
                 "Particle (R) Rust port with P4 host features v{}",
@@ -980,17 +981,18 @@ mod tests {
 
     #[test]
     fn plugin_metadata_builds_on_a_one_megabyte_host_stack() {
-        let (count, label) = std::thread::Builder::new()
+        let (count, label, name) = std::thread::Builder::new()
             .stack_size(1024 * 1024)
             .spawn(|| {
                 let info = ParticleFilter.plugin_info();
-                (info.config_items.len(), info.label)
+                (info.config_items.len(), info.label, info.name)
             })
             .unwrap()
             .join()
             .unwrap();
         assert!(count > 20);
         assert_eq!(label.as_deref(), Some(PARTICLE_LABEL));
+        assert!(name.ends_with(PARTICLE_SCRIPT_SUFFIX));
     }
 
     #[test]
