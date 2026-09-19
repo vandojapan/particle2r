@@ -1,14 +1,40 @@
+#![cfg_attr(
+    any(feature = "stack-basic", feature = "stack-extension"),
+    allow(dead_code)
+)]
+
 use aviutl2::{
     AnyResult,
     filter::{
-        DrawImageParam, FilterConfigItem, FilterConfigItemSliceExt, FilterConfigItems,
-        FilterConfigTrack, FilterConfigTrackGroup, FilterPlugin, FilterPluginTable,
-        FilterProcVideo, ImageResource, VertexColor, VertexList,
+        FilterConfigFile, FilterConfigItem, FilterConfigItemSliceExt, FilterConfigItems,
+        FilterConfigString, FilterConfigText, FilterConfigTrack, FilterConfigTrackGroup,
+        FilterPlugin, FilterPluginTable, FilterProcVideo, ImageResource,
+        OutputImageResourcePixelFormat, VertexColor, VertexList,
     },
 };
 use particle_core::{
-    Arrival, EmitterShape, OrbitPlane, P3Config, ParticleConfig, TrailMode, Wave, render_batch,
+    AlphaMask, Arrival, EmitterShape, MaskClip, MaskCollision, MaskCollisionMode, OrbitPlane,
+    P3Config, ParticleConfig, RenderWorkspace, TrailMode, Wave, build_funnel, build_mesh,
+    build_mesh_faces, render_batch_cached, render_batch_with_mask_cached,
 };
+use std::{
+    collections::HashMap,
+    sync::{Mutex, OnceLock},
+};
+
+const PARTICLE_LABEL: &str = "パーティクル(R)";
+
+mod legacy_ui;
+mod p4_audio;
+mod p4_draw;
+mod p4_host;
+mod p6_profile;
+mod script_control;
+mod stack;
+#[cfg(feature = "stack-basic")]
+use stack::StackBasicFilter;
+#[cfg(feature = "stack-extension")]
+use stack::StackExtensionFilter;
 
 #[aviutl2::filter::filter_config_items]
 #[derive(Debug, Clone)]
@@ -57,6 +83,110 @@ struct FilterConfig {
     zoom_end: i32,
     #[track(name = "シード", range = -100000..=100000, step = 1.0, default = 0, group = "その他")]
     seed: i32,
+    #[track(name = "素材レイヤー (-1=現在)", range = -1..=100, step = 1.0, default = -1, group = "P4 素材")]
+    source_layer: i32,
+    #[track(name = "素材種類 0画像 1連番 2文字 3行 4立体 5ガラス 6画像一覧", range = 0..=6, step = 1.0, default = 0, group = "P4 素材")]
+    source_kind: i32,
+    #[string(name = "連番パス (#を番号に置換)")]
+    sequence_pattern: String,
+    #[text(name = "画像一覧 (1行1ファイル)")]
+    image_files: String,
+    #[track(name = "画像一覧をランダム", range = 0..=1, step = 1.0, default = 0, group = "P4 素材")]
+    image_random: i32,
+    #[track(name = "連番fps", range = 1..=240, step = 1.0, default = 30, group = "P4 素材")]
+    sequence_fps: i32,
+    #[track(name = "素材時刻 0現在 1出生 2年齢", range = 0..=2, step = 1.0, default = 2, group = "P4 素材")]
+    source_time: i32,
+    #[text(name = "文字・行の分割元テキスト")]
+    source_text: String,
+    #[track(name = "立体形状 0六面 1球 2錐 3双錐 4曲面 5奥行", range = 0..=5, step = 1.0, default = 0, group = "P4 立体")]
+    solid_shape: i32,
+    #[track(name = "立体サイズ", range = 1..=1000, step = 1.0, default = 50, group = "P4 立体")]
+    solid_size: i32,
+    #[track(name = "立体分割数", range = 3..=20, step = 1.0, default = 10, group = "P4 立体")]
+    solid_divisions: i32,
+    #[track(name = "立体奥行き", range = 0..=2000, step = 1.0, default = 100, group = "P4 立体")]
+    solid_depth: i32,
+    #[track(name = "立体横曲率", range = -200..=200, step = 1.0, default = 50, group = "P4 立体")]
+    solid_curve_x: i32,
+    #[track(name = "立体縦曲率", range = -200..=200, step = 1.0, default = 20, group = "P4 立体")]
+    solid_curve_y: i32,
+    #[track(name = "回転表現 0標準 1-6軸順", range = 0..=6, step = 1.0, default = 0, group = "P4 立体")]
+    rotation_order: i32,
+    #[track(name = "立体色 R", range = 0..=255, step = 1.0, default = 255, group = "P4 立体")]
+    solid_r: i32,
+    #[track(name = "立体色 G", range = 0..=255, step = 1.0, default = 255, group = "P4 立体")]
+    solid_g: i32,
+    #[track(name = "立体色 B", range = 0..=255, step = 1.0, default = 255, group = "P4 立体")]
+    solid_b: i32,
+    #[track(name = "ガラス屈折距離", range = -100..=100, step = 1.0, default = 12, group = "P4 ガラス")]
+    glass_offset: i32,
+    #[string(name = "粒子別効果名")]
+    particle_effect_name: String,
+    #[string(name = "粒子別効果パラメータ key=value;...")]
+    particle_effect_params: String,
+    #[file(name = "音声WAV (PCM16)", filters = { "WAV" => ["wav"] })]
+    audio_file: Option<std::path::PathBuf>,
+    #[track(name = "音声帯域 0無効 1-10", range = 0..=10, step = 1.0, default = 0, group = "P4 音声")]
+    audio_band: i32,
+    #[track(name = "音声速度変調 %", range = 0..=500, step = 1.0, default = 100, group = "P4 音声")]
+    audio_speed_depth: i32,
+    #[track(name = "音声頻度変調 %", range = 0..=500, step = 1.0, default = 0, group = "P4 音声")]
+    audio_frequency_depth: i32,
+    #[track(name = "音声透過率変調 %", range = 0..=100, step = 1.0, default = 0, group = "P4 音声")]
+    audio_alpha_depth: i32,
+    #[track(name = "音声拡大率変調 %", range = 0..=500, step = 1.0, default = 0, group = "P4 音声")]
+    audio_zoom_depth: i32,
+    #[track(name = "追跡レイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 素材")]
+    tracking_layer: i32,
+    #[track(name = "追跡時刻 0現在 1出生", range = 0..=1, step = 1.0, default = 0, group = "P4 素材")]
+    tracking_time: i32,
+    #[track(name = "共有風レイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 共有")]
+    shared_wind_layer: i32,
+    #[track(name = "共有時間レイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 共有")]
+    shared_time_layer: i32,
+    #[track(name = "マスクレイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 マスク")]
+    mask_layer: i32,
+    #[track(name = "マスク 0無 1内消 2外消 3反射 4停止 5消失", range = 0..=5, step = 1.0, default = 0, group = "P4 マスク")]
+    mask_mode: i32,
+    #[track(name = "マスク不透明しきい値", range = 1..=255, step = 1.0, default = 1, group = "P4 マスク")]
+    mask_threshold: i32,
+    #[track(name = "マスク反発係数 %", range = 0..=200, step = 1.0, default = 100, group = "P4 マスク")]
+    mask_restitution: i32,
+    #[track(name = "メッシュを使用", range = 0..=1, step = 1.0, default = 0, group = "P4 メッシュ")]
+    mesh_enabled: i32,
+    #[track(name = "接続距離", range = 1..=4000, step = 1.0, default = 100, group = "P4 メッシュ")]
+    mesh_distance: i32,
+    #[track(name = "粒子ごとの最大接続", range = 1..=16, step = 1.0, default = 2, group = "P4 メッシュ")]
+    mesh_max_links: i32,
+    #[track(name = "線の幅", range = 1..=100, step = 1.0, default = 1, group = "P4 メッシュ")]
+    mesh_width: i32,
+    #[track(name = "線の透過率 %", range = 0..=100, step = 1.0, default = 50, group = "P4 メッシュ")]
+    mesh_alpha: i32,
+    #[track(name = "面を描画", range = 0..=1, step = 1.0, default = 0, group = "P4 メッシュ")]
+    mesh_faces: i32,
+    #[track(name = "線色 R", range = 0..=255, step = 1.0, default = 255, group = "P4 メッシュ")]
+    mesh_r: i32,
+    #[track(name = "線色 G", range = 0..=255, step = 1.0, default = 255, group = "P4 メッシュ")]
+    mesh_g: i32,
+    #[track(name = "線色 B", range = 0..=255, step = 1.0, default = 255, group = "P4 メッシュ")]
+    mesh_b: i32,
+    #[track(name = "ファンネル数", range = 0..=128, step = 1.0, default = 0, group = "P4 ファンネル")]
+    funnel_count: i32,
+    #[track(name = "ファンネルサイズ %", range = 1..=500, step = 1.0, default = 30, group = "P4 ファンネル")]
+    funnel_scale: i32,
+    #[track(name = "ファンネル半径", range = 1..=1500, step = 1.0, default = 150, group = "P4 ファンネル")]
+    funnel_radius: i32,
+    #[track(name = "ファンネル公転速度 度/秒", range = -1000..=1000, step = 1.0, default = 80, group = "P4 ファンネル")]
+    funnel_angular_speed: i32,
+    #[track(name = "ファンネル円環数", range = 1..=8, step = 1.0, default = 1, group = "P4 ファンネル")]
+    funnel_rings: i32,
+    #[track(name = "ファンネル自転 度/秒", range = -3600..=3600, step = 1.0, default = 0, group = "P4 ファンネル")]
+    funnel_self_spin: i32,
+    #[text(name = "ファンネル画像一覧 (1行1ファイル)")]
+    funnel_image_files: String,
+    #[track(name = "ファンネル画像をランダム", range = 0..=1, step = 1.0, default = 1, group = "P4 ファンネル")]
+    funnel_image_random: i32,
 
     #[track(name = "風X 開始", range = -10000..=10000, step = 1.0, default = 0, group = "P3 風")]
     wind_from_x: i32,
@@ -296,9 +426,11 @@ impl FilterConfig {
             direction_z_degrees: self.direction_z as f64,
             spread_z_degrees: self.spread_z as f64,
             rotation_z_degrees_per_second: self.rotation_z_speed as f64,
+            face_direction: false,
             simultaneous: self.simultaneous.max(1) as u32,
             lifetime: self.lifetime_centis.max(1) as f64 / 100.0,
             start_time: self.start_centis.max(0) as f64 / 100.0,
+            end_time: None,
             gravity_x: self.gravity_x as f64,
             gravity_y: self.gravity_y as f64,
             gravity_z: self.gravity_z as f64,
@@ -318,6 +450,7 @@ impl FilterConfig {
             seed: self.seed,
             layer,
             p3,
+            script_motion: Default::default(),
         }
     }
 }
@@ -329,11 +462,90 @@ fn wave(depth_percent: i32, period_ms: i32) -> Wave {
     }
 }
 
+const MAX_MASK_PIXELS: usize = 16_777_216;
+const MAX_RENDER_WORKSPACES: usize = 16;
+static RENDER_WORKSPACES: OnceLock<Mutex<HashMap<String, RenderWorkspace>>> = OnceLock::new();
+
+fn take_render_workspace(object_id: impl ToString) -> (String, RenderWorkspace) {
+    let key = object_id.to_string();
+    let workspace = RENDER_WORKSPACES
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+        .ok()
+        .and_then(|mut cache| cache.remove(&key))
+        .unwrap_or_default();
+    (key, workspace)
+}
+
+fn return_render_workspace(key: String, workspace: RenderWorkspace) {
+    let Ok(mut cache) = RENDER_WORKSPACES
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+    else {
+        return;
+    };
+    if cache.len() >= MAX_RENDER_WORKSPACES
+        && let Some(oldest) = cache.keys().next().cloned()
+    {
+        cache.remove(&oldest);
+    }
+    cache.insert(key, workspace);
+}
+
+fn read_layer_alpha_mask(video: &mut FilterProcVideo<()>, layer: i32) -> Option<AlphaMask> {
+    if layer < 0 || layer as u32 == video.object.layer {
+        return None;
+    }
+    let layer = layer as u32;
+    if video.get_image_object(layer, 0.0).is_none() {
+        p4_host::warn_once(
+            format!("mask-{layer}"),
+            format!("パーティクル(R): マスクレイヤー {layer} が見つかりません"),
+        );
+        return None;
+    }
+    let source = ImageResource::Layer {
+        layer,
+        apply_additional_effects: false,
+    };
+    let cache = ImageResource::Resource(format!("particle2r-mask-{}", video.object.id));
+    video.copy_image_resource(&source, &cache).ok()?;
+    let (width, height) = video.get_image_resource_size(&cache).ok()?;
+    let pixels = (width as usize).checked_mul(height as usize)?;
+    if pixels == 0 || pixels > MAX_MASK_PIXELS {
+        return None;
+    }
+    let pitch = width.checked_mul(4)?;
+    let mut rgba = vec![0_u8; pixels.checked_mul(4)?];
+    video
+        .get_image_resource_data(
+            &cache,
+            &mut rgba,
+            width,
+            height,
+            pitch,
+            OutputImageResourcePixelFormat::Rgba,
+        )
+        .ok()?;
+    AlphaMask::from_rgba(width, height, &rgba)
+}
+
+fn mask_clip(mode: i32) -> MaskClip {
+    match mode {
+        1 => MaskClip::HideInside,
+        2 => MaskClip::HideOutside,
+        _ => MaskClip::Disabled,
+    }
+}
+
 // FilterConfigItem itself is not Send because it also supports opaque data
 // items. This filter only declares tracks and track groups, which are Send.
 enum TrackItem {
     Track(FilterConfigTrack),
     Group(FilterConfigTrackGroup),
+    String(FilterConfigString),
+    Text(FilterConfigText),
+    File(FilterConfigFile),
 }
 
 fn build_config_items() -> Vec<FilterConfigItem> {
@@ -346,6 +558,9 @@ fn build_config_items() -> Vec<FilterConfigItem> {
                 .map(|item| match item {
                     FilterConfigItem::Track(track) => TrackItem::Track(track),
                     FilterConfigItem::TrackGroup(group) => TrackItem::Group(group),
+                    FilterConfigItem::String(value) => TrackItem::String(value),
+                    FilterConfigItem::Text(value) => TrackItem::Text(value),
+                    FilterConfigItem::File(value) => TrackItem::File(value),
                     _ => panic!("unexpected filter config item"),
                 })
                 .collect::<Vec<_>>()
@@ -358,6 +573,9 @@ fn build_config_items() -> Vec<FilterConfigItem> {
         .map(|item| match item {
             TrackItem::Track(track) => FilterConfigItem::Track(track),
             TrackItem::Group(group) => FilterConfigItem::TrackGroup(group),
+            TrackItem::String(value) => FilterConfigItem::String(value),
+            TrackItem::Text(value) => FilterConfigItem::Text(value),
+            TrackItem::File(value) => FilterConfigItem::File(value),
         })
         .collect()
 }
@@ -378,9 +596,9 @@ impl FilterPlugin for ParticleFilter {
         let config_items = build_config_items();
         FilterPluginTable {
             name: "パーティクル(R) 基本版".to_string(),
-            label: None,
+            label: Some(PARTICLE_LABEL.to_string()),
             information: format!(
-                "Particle (R) Rust port with P3 motion v{}",
+                "Particle (R) Rust port with P4 host features v{}",
                 env!("CARGO_PKG_VERSION")
             ),
             flags: aviutl2::bitflag!(aviutl2::filter::FilterPluginFlags { video: true }),
@@ -394,70 +612,367 @@ impl FilterPlugin for ParticleFilter {
         video: &mut FilterProcVideo<Self::Userdata>,
     ) -> AnyResult<()> {
         let config: FilterConfig = config.to_struct();
-        let batch = render_batch(&config.to_core(video.object.layer), video.object.time);
-        let mut quads = Vec::with_capacity(batch.trail_segments.len());
-        for segment in batch.trail_segments {
-            let dx = segment.to[0] - segment.from[0];
-            let dy = segment.to[1] - segment.from[1];
-            let length = dx.hypot(dy);
-            if length <= 1e-6 {
-                continue;
-            }
-            let nx = -dy / length * segment.width * 0.5;
-            let ny = dx / length * segment.width * 0.5;
-            let color = |x, y, z| VertexColor {
-                x,
-                y,
-                z,
-                r: 1.0,
-                g: 1.0,
-                b: 1.0,
-                a: segment.alpha,
-            };
-            quads.push([
-                color(segment.from[0] + nx, segment.from[1] + ny, segment.from[2]),
-                color(segment.to[0] + nx, segment.to[1] + ny, segment.to[2]),
-                color(segment.to[0] - nx, segment.to[1] - ny, segment.to[2]),
-                color(segment.from[0] - nx, segment.from[1] - ny, segment.from[2]),
-            ]);
-        }
-        if !quads.is_empty() {
-            video.draw_poly(&VertexList::QuadColor(quads), None)?;
-        }
-        for particle in batch.trail_images {
-            draw_particle(video, particle)?;
-        }
-        for particle in batch.particles {
-            draw_particle(video, particle)?;
-        }
-        video.prevent_post_effect();
-        Ok(())
+        render_filter(&config, video)
     }
 }
 
-fn draw_particle(
+fn render_filter(config: &FilterConfig, video: &mut FilterProcVideo<()>) -> AnyResult<()> {
+    render_filter_scripted(config, video, None, None, RenderOptions::default(), false)
+}
+
+#[derive(Clone, Copy)]
+struct RenderOptions {
+    reverse_draw_order: bool,
+    inverse_frequency: bool,
+    reverse_time: bool,
+    face_direction: bool,
+    face_mode: i32,
+}
+
+impl Default for RenderOptions {
+    fn default() -> Self {
+        Self {
+            reverse_draw_order: false,
+            inverse_frequency: false,
+            reverse_time: false,
+            face_direction: false,
+            // -1 means that the extension is absent. When it is present its
+            // legacy default is 0 (front side only).
+            face_mode: -1,
+        }
+    }
+}
+
+fn render_filter_scripted(
+    config: &FilterConfig,
     video: &mut FilterProcVideo<()>,
-    particle: particle_core::ParticleSample,
+    output_source: Option<&str>,
+    behavior_source: Option<&str>,
+    options: RenderOptions,
+    end_at_object: bool,
 ) -> AnyResult<()> {
-    video.draw_image(
-        &ImageResource::Object,
-        DrawImageParam {
-            x: particle.x,
-            y: particle.y,
-            z: particle.z,
-            rx: particle.rx,
-            ry: particle.ry,
-            rz: particle.rz,
-            sx: particle.scale,
-            sy: particle.scale,
-            sz: particle.scale,
-            alpha: particle.alpha,
-        },
-    )?;
+    let profile_started = p6_profile::enabled().then(std::time::Instant::now);
+    let mut core = config.to_core(video.object.layer);
+    if options.inverse_frequency && core.frequency > 0.0 {
+        // Legacy inverse frequency is an interval percentage: 100 means one
+        // emission per second and 200 means one emission per two seconds.
+        core.frequency = 1000.0 / core.frequency;
+    }
+    core.face_direction = options.face_direction;
+    if end_at_object {
+        core.end_time = Some(video.object.time_total);
+    }
+    p4_host::apply_shared_settings(video, &config, &mut core);
+    if output_source.is_some() || behavior_source.is_some() {
+        let longest_lifetime =
+            core.lifetime * (1.0 + core.p3.variation.lifetime_percent.abs() / 100.0).max(1.0);
+        let script_time = if options.reverse_time {
+            (video.object.time_total - video.object.time).max(0.0)
+        } else {
+            video.object.time
+        };
+        let script_frame = if options.reverse_time {
+            video.object.frame_total.saturating_sub(video.object.frame)
+        } else {
+            video.object.frame
+        };
+        match script_control::build_motion(
+            output_source,
+            behavior_source,
+            script_time,
+            video.object.time_total,
+            script_frame,
+            video.object.frame_total,
+            *video.scene.frame_rate.numer() as f64 / *video.scene.frame_rate.denom() as f64,
+            longest_lifetime,
+            video.object.layer,
+        ) {
+            Ok(motion) => core.script_motion = motion,
+            Err(error) => p4_host::warn_once(
+                format!("script-control-{}", video.object.id),
+                format!("パーティクル(R): スクリプト制御: {error}"),
+            ),
+        }
+    }
+    if config.audio_band > 0 {
+        if let Some(file) = config.audio_file.as_deref() {
+            if let Some(level) =
+                p4_audio::band_at(file, video.object.time, (config.audio_band - 1) as usize)
+            {
+                core.speed *=
+                    1.0 + level as f64 * config.audio_speed_depth.clamp(0, 500) as f64 / 100.0;
+                core.frequency *=
+                    1.0 + level as f64 * config.audio_frequency_depth.clamp(0, 500) as f64 / 100.0;
+                let alpha_factor =
+                    1.0 - level as f64 * config.audio_alpha_depth.clamp(0, 100) as f64 / 100.0;
+                core.alpha_start *= alpha_factor;
+                core.alpha_end *= alpha_factor;
+                let zoom_factor =
+                    1.0 + level as f64 * config.audio_zoom_depth.clamp(0, 500) as f64 / 100.0;
+                core.zoom_start *= zoom_factor;
+                core.zoom_end *= zoom_factor;
+            } else {
+                p4_host::warn_once(
+                    format!("audio-{}", file.display()),
+                    format!(
+                        "パーティクル(R): 音声を解析できません: {} (PCM16 WAV が必要です)",
+                        file.display()
+                    ),
+                );
+            }
+        }
+    }
+    let mask = if config.mask_mode != 0 {
+        read_layer_alpha_mask(video, config.mask_layer)
+    } else {
+        None
+    };
+    let collision_mode = match config.mask_mode {
+        3 => Some(MaskCollisionMode::Bounce),
+        4 => Some(MaskCollisionMode::Stop),
+        5 => Some(MaskCollisionMode::Vanish),
+        _ => None,
+    };
+    let (workspace_key, mut workspace) = take_render_workspace(video.object.id);
+    let render_time = if options.reverse_time {
+        (video.object.time_total - video.object.time).max(0.0)
+    } else {
+        video.object.time
+    };
+    let mut batch = if let (Some(mask), Some(mode)) = (mask.as_ref(), collision_mode) {
+        render_batch_with_mask_cached(
+            &core,
+            render_time,
+            MaskCollision {
+                mask,
+                threshold: config.mask_threshold.clamp(1, 255) as u8,
+                mode,
+                restitution: config.mask_restitution.clamp(0, 200) as f64 / 100.0,
+            },
+            &mut workspace,
+        )
+    } else {
+        render_batch_cached(&core, render_time, &mut workspace)
+    };
+    return_render_workspace(workspace_key, workspace);
+    p4_host::apply_tracking(video, &config, &mut batch);
+    if options.reverse_draw_order {
+        batch.particles.reverse();
+        batch.trail_images.reverse();
+    }
+    if (0..=2).contains(&options.face_mode) {
+        let keep = |particle: &particle_core::ParticleSample| {
+            let normal_z = particle.rx.to_radians().cos() * particle.ry.to_radians().cos();
+            if options.face_mode == 0 {
+                normal_z >= 0.0
+            } else {
+                normal_z < 0.0
+            }
+        };
+        batch.particles.retain(keep);
+        batch.trail_images.retain(keep);
+        if options.face_mode == 1 {
+            for particle in batch
+                .particles
+                .iter_mut()
+                .chain(batch.trail_images.iter_mut())
+            {
+                particle.ry += 180.0;
+            }
+        }
+    }
+    let source = p4_host::prepare_source(video, config.source_layer);
+    let background = if config.source_kind == 5 {
+        let snapshot =
+            ImageResource::Resource(format!("particle2r-background-{}", video.object.id));
+        video
+            .copy_image_resource(&ImageResource::Framebuffer, &snapshot)
+            .ok()
+            .map(|_| snapshot)
+    } else {
+        None
+    };
+    let clip = mask_clip(config.mask_mode);
+    if clip != MaskClip::Disabled {
+        if let Some(mask) = mask.as_ref() {
+            let threshold = config.mask_threshold.clamp(1, 255) as u8;
+            batch
+                .particles
+                .retain(|particle| clip.keeps(&mask, particle.x, particle.y, threshold));
+            batch
+                .trail_images
+                .retain(|particle| clip.keeps(&mask, particle.x, particle.y, threshold));
+            batch.trail_segments.retain(|segment| {
+                clip.keeps(
+                    &mask,
+                    (segment.from[0] + segment.to[0]) * 0.5,
+                    (segment.from[1] + segment.to[1]) * 0.5,
+                    threshold,
+                )
+            });
+        }
+    }
+    let profile_calculation = profile_started.map(|started| started.elapsed());
+    let profile_particles = batch.particles.len();
+    let mut profile_output_items =
+        batch.particles.len() + batch.trail_images.len() + batch.trail_segments.len();
+    let mut quads = Vec::with_capacity(batch.trail_segments.len());
+    if config.mesh_enabled != 0 {
+        for segment in build_mesh(
+            &batch.particles,
+            config.mesh_distance.max(1) as f32,
+            config.mesh_max_links.clamp(1, 16) as usize,
+            512,
+        ) {
+            append_line_quad(
+                &mut quads,
+                segment.from,
+                segment.to,
+                config.mesh_width.max(1) as f32,
+                config.mesh_alpha.clamp(0, 100) as f32 / 100.0,
+                [config.mesh_r, config.mesh_g, config.mesh_b]
+                    .map(|v| v.clamp(0, 255) as f32 / 255.0),
+            );
+        }
+    }
+    for segment in batch.trail_segments {
+        append_line_quad(
+            &mut quads,
+            segment.from,
+            segment.to,
+            segment.width,
+            segment.alpha,
+            [1.0, 1.0, 1.0],
+        );
+    }
+    if !quads.is_empty() {
+        video.draw_poly(&VertexList::QuadColor(quads), None)?;
+    }
+    if config.mesh_enabled != 0 && config.mesh_faces != 0 {
+        let rgb =
+            [config.mesh_r, config.mesh_g, config.mesh_b].map(|v| v.clamp(0, 255) as f32 / 255.0);
+        let alpha = config.mesh_alpha.clamp(0, 100) as f32 / 100.0;
+        let triangles: Vec<_> =
+            build_mesh_faces(&batch.particles, config.mesh_distance.max(1) as f32, 512)
+                .into_iter()
+                .map(|face| {
+                    face.map(|[x, y, z]| VertexColor {
+                        x,
+                        y,
+                        z,
+                        r: rgb[0],
+                        g: rgb[1],
+                        b: rgb[2],
+                        a: alpha,
+                    })
+                })
+                .collect();
+        if !triangles.is_empty() {
+            video.draw_poly(&VertexList::TriangleColor(triangles), None)?;
+        }
+    }
+    let mut drawer = p4_draw::DrawContext {
+        source,
+        config: &config,
+        object_time: render_time,
+        background,
+        sequence: std::collections::HashMap::new(),
+    };
+    drawer.draw_many(video, batch.trail_images)?;
+    let mut funnel_config = config.clone();
+    if !config.funnel_image_files.trim().is_empty() {
+        funnel_config.source_kind = 6;
+        funnel_config.image_files = config.funnel_image_files.clone();
+        funnel_config.image_random = config.funnel_image_random;
+    }
+    let mut funnel_drawer = p4_draw::DrawContext {
+        source: drawer.source.clone(),
+        config: &funnel_config,
+        object_time: render_time,
+        background: drawer.background.clone(),
+        sequence: std::collections::HashMap::new(),
+    };
+    let ring_count = config.funnel_rings.clamp(1, 8) as usize;
+    let mut child_budget = 10_000usize;
+    for ring in 0..ring_count {
+        let children = build_funnel(
+            &batch.particles,
+            render_time,
+            config.funnel_count.max(0) as usize,
+            config.funnel_radius.max(1) as f32 * (ring + 1) as f32 / ring_count as f32,
+            config.funnel_scale.clamp(1, 500) as f32 / 100.0,
+            config.funnel_angular_speed as f32,
+            child_budget,
+        );
+        child_budget = child_budget.saturating_sub(children.len());
+        profile_output_items += children.len();
+        let children = children
+            .into_iter()
+            .map(|mut particle| {
+                particle.id = particle.id.saturating_mul(8).saturating_add(ring as u64);
+                particle.rz +=
+                    config.funnel_self_spin as f32 * (render_time - particle.birth_time) as f32;
+                particle
+            })
+            .collect();
+        funnel_drawer.draw_many(video, children)?;
+        if child_budget == 0 {
+            break;
+        }
+    }
+    drawer.draw_many(video, batch.particles)?;
+    video.prevent_post_effect();
+    if let (Some(started), Some(calculation)) = (profile_started, profile_calculation) {
+        p6_profile::record(
+            [video.scene.width, video.scene.height],
+            profile_particles,
+            profile_output_items,
+            calculation,
+            started.elapsed(),
+        );
+    }
     Ok(())
 }
 
+fn append_line_quad(
+    quads: &mut Vec<[VertexColor; 4]>,
+    from: [f32; 3],
+    to: [f32; 3],
+    width: f32,
+    alpha: f32,
+    rgb: [f32; 3],
+) {
+    let dx = to[0] - from[0];
+    let dy = to[1] - from[1];
+    let length = dx.hypot(dy);
+    if length <= 1e-6 || !width.is_finite() || !alpha.is_finite() {
+        return;
+    }
+    let nx = -dy / length * width * 0.5;
+    let ny = dx / length * width * 0.5;
+    let color = |x, y, z| VertexColor {
+        x,
+        y,
+        z,
+        r: rgb[0],
+        g: rgb[1],
+        b: rgb[2],
+        a: alpha,
+    };
+    quads.push([
+        color(from[0] + nx, from[1] + ny, from[2]),
+        color(to[0] + nx, to[1] + ny, to[2]),
+        color(to[0] - nx, to[1] - ny, to[2]),
+        color(from[0] - nx, from[1] - ny, from[2]),
+    ]);
+}
+
+#[cfg(feature = "legacy")]
 aviutl2::register_filter_plugin!(ParticleFilter);
+#[cfg(feature = "stack-basic")]
+aviutl2::register_filter_plugin!(StackBasicFilter);
+#[cfg(feature = "stack-extension")]
+aviutl2::register_filter_plugin!(StackExtensionFilter);
 
 #[cfg(test)]
 mod tests {
@@ -465,12 +980,26 @@ mod tests {
 
     #[test]
     fn plugin_metadata_builds_on_a_one_megabyte_host_stack() {
-        let count = std::thread::Builder::new()
+        let (count, label) = std::thread::Builder::new()
             .stack_size(1024 * 1024)
-            .spawn(|| ParticleFilter.plugin_info().config_items.len())
+            .spawn(|| {
+                let info = ParticleFilter.plugin_info();
+                (info.config_items.len(), info.label)
+            })
             .unwrap()
             .join()
             .unwrap();
         assert!(count > 20);
+        assert_eq!(label.as_deref(), Some(PARTICLE_LABEL));
+    }
+
+    #[test]
+    fn p4_text_file_and_track_controls_decode_from_metadata() {
+        let items = build_config_items();
+        let config: FilterConfig = items.as_slice().to_struct();
+        assert_eq!(config.source_kind, 0);
+        assert!(config.sequence_pattern.is_empty());
+        assert!(config.audio_file.is_none());
+        assert_eq!(config.funnel_rings, 1);
     }
 }

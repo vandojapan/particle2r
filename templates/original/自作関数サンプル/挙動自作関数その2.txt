@@ -1,0 +1,19 @@
+function vector(t)
+local h=math.floor(t/1)--1秒おきに下、右、上、左の順に動きます
+local vx,vy,vz
+vz=0
+if(h%4==0) then
+vx=0
+vy=500
+elseif(h%4==1) then
+vx=500
+vy=0
+elseif(h%4==2) then
+vx=0
+vy=-500
+elseif(h%4==3) then
+vx=-500
+vy=0
+end
+return vx,vy,vz
+end

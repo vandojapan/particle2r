@@ -1,11 +1,20 @@
 //! Host independent, deterministic particle sampling for the Particle (R) port.
 
-use std::f64::consts::{PI, TAU};
+use std::{
+    collections::HashMap,
+    f64::consts::{PI, TAU},
+};
 
 mod p3;
+mod p4;
 pub use p3::{
     Arrival, Boundary, Convergence, Dispersion, Modulation, Orbit, OrbitPlane, P3Config, TimeWarp,
     Trail, TrailMode, Variation, Wave, WindCurve,
+};
+pub use p4::{
+    AlphaMask, LinkError, LinkGraph, LinkKind, LinkRequest, MaskClip, MaskCollision,
+    MaskCollisionMode, MeshSegment, P4TimeContext, TimeDomain, build_funnel, build_mesh,
+    build_mesh_faces,
 };
 
 const MAX_PARTICLES: usize = 10_000;
@@ -19,7 +28,7 @@ pub enum EmitterShape {
     Sphere,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct ParticleConfig {
     /// Legacy output speed: distance travelled in one second.
     pub speed: f64,
@@ -30,9 +39,16 @@ pub struct ParticleConfig {
     pub direction_z_degrees: f64,
     pub spread_z_degrees: f64,
     pub rotation_z_degrees_per_second: f64,
+    /// Add the current XY travel direction to the Z rotation. This matches
+    /// the legacy 「進行方向を向く」 switch; the configured initial/spin
+    /// rotation is still applied afterwards.
+    pub face_direction: bool,
     pub simultaneous: u32,
     pub lifetime: f64,
     pub start_time: f64,
+    /// When set, particles are removed at this object-local endpoint even if
+    /// their configured lifetime would continue past it.
+    pub end_time: Option<f64>,
     pub gravity_x: f64,
     pub gravity_y: f64,
     pub gravity_z: f64,
@@ -47,6 +63,8 @@ pub struct ParticleConfig {
     pub seed: i32,
     pub layer: u32,
     pub p3: P3Config,
+    /// Curves evaluated from the legacy Script Control functions.
+    pub script_motion: ScriptMotion,
 }
 
 impl Default for ParticleConfig {
@@ -59,9 +77,11 @@ impl Default for ParticleConfig {
             direction_z_degrees: 0.0,
             spread_z_degrees: 0.0,
             rotation_z_degrees_per_second: 60.0,
+            face_direction: false,
             simultaneous: 1,
             lifetime: 3.0,
             start_time: 0.0,
+            end_time: None,
             gravity_x: 0.0,
             gravity_y: 0.0,
             gravity_z: 0.0,
@@ -76,8 +96,45 @@ impl Default for ParticleConfig {
             seed: 0,
             layer: 0,
             p3: P3Config::default(),
+            script_motion: ScriptMotion::default(),
         }
     }
+}
+
+/// Samples produced by the AviUtl host adapter from legacy `xyz`/`xyzd` and
+/// `vector` Lua functions. Keeping the Lua VM outside the core makes sampling
+/// deterministic and lets trails use the same curve as the main particle.
+#[derive(Clone, Debug, Default)]
+pub struct ScriptMotion {
+    pub output_step: f64,
+    pub output: Vec<[f64; 5]>,
+    pub output_has_direction: bool,
+    pub behavior_step: f64,
+    /// Integrated `vector(t)` velocity, indexed by particle age.
+    pub behavior_position: Vec<[f64; 3]>,
+}
+
+impl ScriptMotion {
+    fn output_at(&self, time: f64) -> Option<[f64; 5]> {
+        interpolate(&self.output, self.output_step, time)
+    }
+
+    fn behavior_at(&self, age: f64) -> Option<[f64; 3]> {
+        interpolate(&self.behavior_position, self.behavior_step, age)
+    }
+}
+
+fn interpolate<const N: usize>(samples: &[[f64; N]], step: f64, time: f64) -> Option<[f64; N]> {
+    if samples.is_empty() || !step.is_finite() || step <= 0.0 || !time.is_finite() {
+        return None;
+    }
+    let position = (time.max(0.0) / step).min((samples.len() - 1) as f64);
+    let lower = position.floor() as usize;
+    let upper = (lower + 1).min(samples.len() - 1);
+    let fraction = position - lower as f64;
+    Some(std::array::from_fn(|axis| {
+        samples[lower][axis] + (samples[upper][axis] - samples[lower][axis]) * fraction
+    }))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -109,6 +166,7 @@ pub struct RenderBatch {
     pub trail_segments: Vec<TrailSegment>,
 }
 
+#[derive(Clone, Debug)]
 struct ParticleSeed {
     id: u64,
     birth_time: f64,
@@ -123,6 +181,120 @@ struct ParticleSeed {
     alpha_end: f64,
     zoom_start: f64,
     zoom_end: f64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SeedCacheKey(Vec<u64>);
+
+impl SeedCacheKey {
+    fn new(config: &ParticleConfig) -> Self {
+        let mut values = Vec::with_capacity(48 + config.script_motion.output.len() * 5);
+        macro_rules! number {
+            ($value:expr) => {
+                values.push(($value).to_bits())
+            };
+        }
+        number!(config.speed);
+        number!(config.frequency);
+        number!(config.direction_degrees);
+        number!(config.spread_degrees);
+        number!(config.direction_z_degrees);
+        number!(config.spread_z_degrees);
+        number!(config.rotation_z_degrees_per_second);
+        values.push(config.face_direction as u64);
+        values.push(config.simultaneous as u64);
+        number!(config.lifetime);
+        number!(config.start_time);
+        values.push(config.end_time.map(f64::to_bits).unwrap_or(u64::MAX));
+        number!(config.gravity_x);
+        number!(config.gravity_y);
+        number!(config.gravity_z);
+        number!(config.alpha_start);
+        number!(config.alpha_end);
+        number!(config.zoom_start);
+        number!(config.zoom_end);
+        values.push(config.shape as u64);
+        number!(config.extent_x);
+        number!(config.extent_y);
+        number!(config.extent_z);
+        values.push(config.seed as u32 as u64);
+        values.push(config.layer as u64);
+        let variation = config.p3.variation;
+        for value in [
+            variation.speed_percent,
+            variation.lifetime_percent,
+            variation.rotation_percent,
+            variation.gravity_percent,
+            variation.alpha_percent,
+            variation.zoom_percent,
+        ] {
+            number!(value);
+        }
+        let dispersion = config.p3.dispersion;
+        values.push(dispersion.enabled as u64);
+        number!(dispersion.after);
+        number!(dispersion.impulse);
+        number!(dispersion.xy_spread_degrees);
+        number!(dispersion.z_spread_degrees);
+        values.push(dispersion.on_bounce as u64);
+        number!(dispersion.stop_after);
+        number!(config.p3.modulation.frequency.depth);
+        number!(config.p3.modulation.frequency.period);
+        number!(config.script_motion.output_step);
+        values.push(config.script_motion.output_has_direction as u64);
+        for point in &config.script_motion.output {
+            for value in point {
+                number!(*value);
+            }
+        }
+        Self(values)
+    }
+}
+
+/// Reuses deterministic per-particle initialization between adjacent frames.
+/// The cache is explicitly owned by the caller, bounded to the event window
+/// needed by the current frame, and invalidates itself when seed inputs change.
+#[derive(Default, Debug)]
+pub struct RenderWorkspace {
+    key: Option<SeedCacheKey>,
+    seeds: HashMap<u64, ParticleSeed>,
+}
+
+impl RenderWorkspace {
+    pub fn clear(&mut self) {
+        self.key = None;
+        self.seeds.clear();
+    }
+
+    pub fn cached_seed_count(&self) -> usize {
+        self.seeds.len()
+    }
+
+    fn prepare(&mut self, config: &ParticleConfig, first_id: u64, last_id: u64) {
+        let key = SeedCacheKey::new(config);
+        if self.key.as_ref() != Some(&key) {
+            self.key = Some(key);
+            self.seeds.clear();
+        } else {
+            self.seeds.retain(|id, _| *id >= first_id && *id <= last_id);
+        }
+    }
+
+    fn seed(
+        &mut self,
+        config: &ParticleConfig,
+        event: u64,
+        sibling: u32,
+        birth_time: f64,
+    ) -> ParticleSeed {
+        let id = event
+            .saturating_mul(config.simultaneous as u64)
+            .saturating_add(sibling as u64);
+        self.seeds
+            .entry(id)
+            .or_insert_with(|| particle_seed(config, event, sibling, birth_time))
+            .clone()
+    }
 }
 
 /// Low 32 bits of the seed mixture recovered from the original DLL.
@@ -183,15 +355,50 @@ impl Mt19937 {
 /// Samples living particles from absolute object time. This function keeps the
 /// P2 API; use [`render_batch`] to obtain the optional trail geometry.
 pub fn sample(config: &ParticleConfig, time: f64) -> Vec<ParticleSample> {
-    render_internal(config, time, false).particles
+    render_internal(config, time, false, None, None).particles
 }
 
 /// Builds particles and P3 trails without retaining state between frames.
 pub fn render_batch(config: &ParticleConfig, time: f64) -> RenderBatch {
-    render_internal(config, time, true)
+    render_internal(config, time, true, None, None)
 }
 
-fn render_internal(config: &ParticleConfig, time: f64, with_trails: bool) -> RenderBatch {
+/// Builds a batch while retaining deterministic particle seeds needed by
+/// adjacent frames. Callers should keep one workspace per particle object.
+pub fn render_batch_cached(
+    config: &ParticleConfig,
+    time: f64,
+    workspace: &mut RenderWorkspace,
+) -> RenderBatch {
+    render_internal(config, time, true, None, Some(workspace))
+}
+
+/// Samples the current mask image against each particle's path, using the same
+/// snapshot for all steps of this frame's deterministic simulation.
+pub fn render_batch_with_mask(
+    config: &ParticleConfig,
+    time: f64,
+    collision: MaskCollision<'_>,
+) -> RenderBatch {
+    render_internal(config, time, true, Some(collision), None)
+}
+
+pub fn render_batch_with_mask_cached(
+    config: &ParticleConfig,
+    time: f64,
+    collision: MaskCollision<'_>,
+    workspace: &mut RenderWorkspace,
+) -> RenderBatch {
+    render_internal(config, time, true, Some(collision), Some(workspace))
+}
+
+fn render_internal(
+    config: &ParticleConfig,
+    time: f64,
+    with_trails: bool,
+    collision: Option<MaskCollision<'_>>,
+    mut workspace: Option<&mut RenderWorkspace>,
+) -> RenderBatch {
     let mut batch = RenderBatch::default();
     if !time.is_finite()
         || !config.lifetime.is_finite()
@@ -218,6 +425,14 @@ fn render_internal(config: &ParticleConfig, time: f64, with_trails: bool) -> Ren
         emission_phase(config, (elapsed - longest_lifetime - trail_length).max(0.0)).floor() as u64;
     let max_events = (MAX_PARTICLES / config.simultaneous as usize).max(1) as u64;
     let first_event = first_event.max(last_event.saturating_sub(max_events - 1));
+    if let Some(workspace) = workspace.as_deref_mut() {
+        let first_id = first_event.saturating_mul(config.simultaneous as u64);
+        let last_id = last_event
+            .saturating_add(1)
+            .saturating_mul(config.simultaneous as u64)
+            .saturating_sub(1);
+        workspace.prepare(config, first_id, last_id);
+    }
     batch.particles.reserve(
         MAX_PARTICLES.min(
             (last_event.saturating_sub(first_event) as usize + 1)
@@ -239,14 +454,18 @@ fn render_internal(config: &ParticleConfig, time: f64, with_trails: bool) -> Ren
             {
                 return batch;
             }
-            let seed = particle_seed(config, event, sibling, birth_time);
+            let seed = if let Some(workspace) = workspace.as_deref_mut() {
+                workspace.seed(config, event, sibling, birth_time)
+            } else {
+                particle_seed(config, event, sibling, birth_time)
+            };
             if batch.particles.len() < MAX_PARTICLES {
-                if let Some(particle) = sample_seed(config, &seed, age) {
+                if let Some(particle) = sample_seed(config, &seed, age, collision) {
                     batch.particles.push(particle);
                 }
             }
             if with_trails && trail_length > 0.0 && config.p3.trail.mode != TrailMode::Off {
-                append_trail(config, &seed, age, &mut batch);
+                append_trail(config, &seed, age, &mut batch, collision);
             }
         }
     }
@@ -299,15 +518,25 @@ fn particle_seed(
             ^ sibling.wrapping_mul(0x85eb_ca6b),
     );
     let (ox, oy, oz) = spawn_position(config, &mut rng);
-    let angle =
+    let scripted_output = config.script_motion.output_at(birth_time);
+    let mut angle =
         (config.direction_degrees + (rng.unit() * 2.0 - 1.0) * config.spread_degrees) * PI / 180.0;
-    let elevation =
+    let mut elevation =
         (config.direction_z_degrees + (rng.unit() * 2.0 - 1.0) * config.spread_z_degrees) * PI
             / 180.0;
+    if config.script_motion.output_has_direction {
+        if let Some(output) = scripted_output {
+            angle = output[3] + (rng.unit() * 2.0 - 1.0) * config.spread_degrees * PI / 180.0;
+            elevation = output[4] + (rng.unit() * 2.0 - 1.0) * config.spread_z_degrees * PI / 180.0;
+        }
+    }
     let initial_rotation_z = rng.unit() * 360.0;
     let variation = config.p3.variation;
     let speed = config.speed * variation_factor(&mut rng, variation.speed_percent);
-    let lifetime = config.lifetime * variation_factor(&mut rng, variation.lifetime_percent);
+    let mut lifetime = config.lifetime * variation_factor(&mut rng, variation.lifetime_percent);
+    if let Some(end_time) = config.end_time.filter(|value| value.is_finite()) {
+        lifetime = lifetime.min((end_time - birth_time).max(0.0));
+    }
     let rotation_speed_z = config.rotation_z_degrees_per_second
         * variation_factor(&mut rng, variation.rotation_percent);
     let gravity_factor = variation_factor(&mut rng, variation.gravity_percent);
@@ -329,10 +558,14 @@ fn particle_seed(
         id,
         birth_time,
         lifetime,
-        origin: [ox, oy, oz],
+        origin: if let Some(output) = scripted_output {
+            [ox + output[0], oy + output[1], oz + output[2]]
+        } else {
+            [ox, oy, oz]
+        },
         initial_velocity: [
             angle.sin() * speed_xy,
-            -angle.cos() * speed_xy,
+            angle.cos() * speed_xy,
             elevation.sin() * speed,
         ],
         gravity: [
@@ -358,20 +591,31 @@ fn variation_factor(rng: &mut Mt19937, percent: f64) -> f64 {
     }
 }
 
-fn sample_seed(config: &ParticleConfig, seed: &ParticleSeed, age: f64) -> Option<ParticleSample> {
+fn sample_seed(
+    config: &ParticleConfig,
+    seed: &ParticleSeed,
+    age: f64,
+    collision: Option<MaskCollision<'_>>,
+) -> Option<ParticleSample> {
     if age < 0.0 || age >= seed.lifetime || seed.lifetime <= 0.0 {
         return None;
     }
     let p3 = &config.p3;
     let motion_age = p3.time_warp.motion_age(age);
-    let pos = p3.position(
+    let mut pos = p3.position(
         seed.birth_time,
         age,
         seed.origin,
         seed.initial_velocity,
         seed.gravity,
         seed.dispersion_impulse,
+        collision,
     )?;
+    if let Some(offset) = config.script_motion.behavior_at(age) {
+        for axis in 0..3 {
+            pos[axis] += offset[axis];
+        }
+    }
     let progress = (age / seed.lifetime).clamp(0.0, 1.0);
     let alpha = (lerp(seed.alpha_start, seed.alpha_end, progress)
         * (1.0 + p3.modulation.alpha.value(motion_age)))
@@ -381,7 +625,48 @@ fn sample_seed(config: &ParticleConfig, seed: &ParticleSeed, age: f64) -> Option
     .max(0.0);
     let rx = 0.5 * p3.rotation_acceleration[0] * motion_age * motion_age;
     let ry = 0.5 * p3.rotation_acceleration[1] * motion_age * motion_age;
-    let rz = seed.initial_rotation_z
+    let facing = if config.face_direction {
+        let delta = (seed.lifetime / 10_000.0).clamp(1.0 / 60_000.0, 1.0 / 600.0);
+        let other_age = if age >= delta {
+            age - delta
+        } else {
+            (age + delta).min((seed.lifetime - f64::EPSILON).max(0.0))
+        };
+        let mut other = p3.position(
+            seed.birth_time,
+            other_age,
+            seed.origin,
+            seed.initial_velocity,
+            seed.gravity,
+            seed.dispersion_impulse,
+            collision,
+        );
+        if let (Some(other), Some(offset)) =
+            (other.as_mut(), config.script_motion.behavior_at(other_age))
+        {
+            for axis in 0..3 {
+                other[axis] += offset[axis];
+            }
+        }
+        other
+            .map(|other| {
+                let (dx, dy) = if other_age < age {
+                    (pos[0] - other[0], pos[1] - other[1])
+                } else {
+                    (other[0] - pos[0], other[1] - pos[1])
+                };
+                if dx.abs() + dy.abs() > 1e-12 {
+                    dx.atan2(dy).to_degrees()
+                } else {
+                    0.0
+                }
+            })
+            .unwrap_or(0.0)
+    } else {
+        0.0
+    };
+    let rz = facing
+        + seed.initial_rotation_z
         + seed.rotation_speed_z * motion_age
         + 0.5 * p3.rotation_acceleration[2] * motion_age * motion_age;
     if [pos[0], pos[1], pos[2], rx, ry, rz, alpha, scale]
@@ -405,19 +690,30 @@ fn sample_seed(config: &ParticleConfig, seed: &ParticleSeed, age: f64) -> Option
     }
 }
 
-fn append_trail(config: &ParticleConfig, seed: &ParticleSeed, age: f64, batch: &mut RenderBatch) {
+fn append_trail(
+    config: &ParticleConfig,
+    seed: &ParticleSeed,
+    age: f64,
+    batch: &mut RenderBatch,
+    collision: Option<MaskCollision<'_>>,
+) {
     let trail = config.p3.trail;
     if age < 0.0 || age > seed.lifetime + trail.length || trail.samples == 0 {
         return;
     }
     let count = trail.samples.min(16);
-    let mut newer = sample_seed(config, seed, age.min((seed.lifetime - 1e-9).max(0.0)));
+    let mut newer = sample_seed(
+        config,
+        seed,
+        age.min((seed.lifetime - 1e-9).max(0.0)),
+        collision,
+    );
     for index in 1..=count {
         if batch.trail_images.len() + batch.trail_segments.len() >= MAX_TRAIL_ITEMS {
             break;
         }
         let previous_age = age - index as f64 * trail.length / count as f64;
-        let Some(mut previous) = sample_seed(config, seed, previous_age) else {
+        let Some(mut previous) = sample_seed(config, seed, previous_age, collision) else {
             continue;
         };
         let fade = 1.0 - index as f64 / (count as f64 + 1.0);
@@ -510,10 +806,88 @@ mod tests {
     }
 
     #[test]
+    fn render_workspace_matches_stateless_frames_and_invalidates() {
+        let mut config = ParticleConfig {
+            frequency: 2_000.0,
+            lifetime: 5.0,
+            spread_degrees: 120.0,
+            ..Default::default()
+        };
+        let mut workspace = RenderWorkspace::default();
+        for time in [5.0, 5.0 + 1.0 / 60.0, 2.0, 5.0 + 2.0 / 60.0] {
+            assert_eq!(
+                render_batch(&config, time),
+                render_batch_cached(&config, time, &mut workspace)
+            );
+            assert!(workspace.cached_seed_count() <= MAX_PARTICLES);
+        }
+
+        config.speed = 275.0;
+        assert_eq!(
+            render_batch(&config, 5.0),
+            render_batch_cached(&config, 5.0, &mut workspace)
+        );
+    }
+
+    #[test]
     fn default_frequency_is_ten_events_per_second() {
         let c = ParticleConfig::default();
         assert_eq!(sample(&c, 0.0).len(), 1);
         assert_eq!(sample(&c, 1.0).len(), 11);
+    }
+
+    #[test]
+    fn script_motion_changes_output_direction_and_behavior() {
+        let mut c = ParticleConfig {
+            speed: 10.0,
+            frequency: 10.0,
+            spread_degrees: 0.0,
+            spread_z_degrees: 0.0,
+            ..Default::default()
+        };
+        c.script_motion = ScriptMotion {
+            output_step: 1.0,
+            output: vec![[5.0, 7.0, 0.0, PI / 2.0, 0.0]; 2],
+            output_has_direction: true,
+            behavior_step: 1.0,
+            behavior_position: vec![[0.0, 0.0, 0.0], [2.0, 4.0, 0.0]],
+        };
+        let first = sample(&c, 0.5).into_iter().find(|p| p.id == 0).unwrap();
+        assert!((first.x - 11.0).abs() < 0.001);
+        assert!((first.y - 9.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn legacy_xyzd_circle_normal_reaches_centre_at_lifetime() {
+        let mut config = ParticleConfig {
+            speed: 100.0,
+            frequency: 10.0,
+            spread_degrees: 0.0,
+            spread_z_degrees: 0.0,
+            lifetime: 3.0,
+            ..Default::default()
+        };
+        // The documented sample starts at (0, 300) and returns -PI as its
+        // XY direction. Legacy angles use (sin(angle), cos(angle)), so the
+        // particle must travel 300 units toward the centre in three seconds.
+        config.script_motion = ScriptMotion {
+            output_step: 1.0,
+            output: vec![[0.0, 300.0, 0.0, -PI, 0.0]],
+            output_has_direction: true,
+            ..Default::default()
+        };
+
+        let near_end = sample(&config, 2.999)
+            .into_iter()
+            .find(|particle| particle.id == 0)
+            .unwrap();
+        assert!(near_end.x.abs() < 0.001);
+        assert!((near_end.y - 0.1).abs() < 0.001);
+        assert!(
+            sample(&config, 3.0)
+                .into_iter()
+                .all(|particle| particle.id != 0)
+        );
     }
 
     #[test]
@@ -529,6 +903,19 @@ mod tests {
     }
 
     #[test]
+    fn object_endpoint_shortens_every_particle_lifetime() {
+        let config = ParticleConfig {
+            speed: 0.0,
+            frequency: 10.0,
+            lifetime: 10.0,
+            end_time: Some(2.0),
+            ..Default::default()
+        };
+        assert!(!sample(&config, 1.999).is_empty());
+        assert!(sample(&config, 2.0).is_empty());
+    }
+
+    #[test]
     fn rotation_uses_particle_age() {
         let c = ParticleConfig {
             frequency: 10.0,
@@ -538,6 +925,28 @@ mod tests {
         let after_one_second = sample(&c, 1.0)[0];
         assert_eq!(initial.id, after_one_second.id);
         assert!((after_one_second.rz - initial.rz - 60.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn face_direction_adds_xy_travel_angle_before_particle_rotation() {
+        let base = ParticleConfig {
+            frequency: 10.0,
+            speed: 100.0,
+            direction_degrees: 90.0,
+            spread_degrees: 0.0,
+            rotation_z_degrees_per_second: 0.0,
+            ..Default::default()
+        };
+        let normal = sample(&base, 0.5)[0];
+        let facing = sample(
+            &ParticleConfig {
+                face_direction: true,
+                ..base
+            },
+            0.5,
+        )[0];
+        let difference = (facing.rz - normal.rz).rem_euclid(360.0);
+        assert!((difference - 90.0).abs() < 0.001);
     }
 
     #[test]
@@ -623,7 +1032,7 @@ mod tests {
                 > sample(
                     &ParticleConfig {
                         p3: P3Config::default(),
-                        ..c
+                        ..c.clone()
                     },
                     0.5
                 )
@@ -685,7 +1094,7 @@ mod tests {
         };
         c.p3.wind.from = [2.0, 0.0, 0.0];
         let pos =
-            c.p3.position(0.0, 60.0, [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3])
+            c.p3.position(0.0, 60.0, [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], None)
                 .unwrap();
         assert!((pos[0] - 3600.0).abs() < 0.001);
     }

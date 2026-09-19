@@ -1,0 +1,19 @@
+function xyzd(t)
+local x=100*math.cos(math.pi*t/5)--5秒で半径100の円を半周します
+local y=100*math.sin(math.pi*t/5)
+local z=0
+local dxy=math.pi*(-t/5+0.5)--出力方向が出力位置における接線方向を向きます
+local dz=0
+return x,y,z,dxy,dz
+end
+
+
+function vector(t)
+local vx=300*math.cos(math.pi*t/0.5)--0.5秒で半径300の円を半周します
+local vy=300*math.sin(math.pi*t/0.5)
+local vz=0
+return vx,vy,vz
+end
+
+
+--同じファイルにxyz関数とvector関数を記述することが可能です

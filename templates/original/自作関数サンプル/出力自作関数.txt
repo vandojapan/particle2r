@@ -1,0 +1,6 @@
+function xyz(t)
+local x=100*math.sin(math.pi*t/60)--60•b‚Å”¼Œa100‚Ì‰~‚ð”¼Žü‚µ‚Ü‚·
+local y=100*math.cos(math.pi*t/60)
+local z=0
+return x,y,z
+end

@@ -1,0 +1,29 @@
+--track0:展開度,0,100,50
+--track1:サイズ,5,200,30
+--track2:回転1,-360,360,0,0.01
+--track3:回転2,-360,360,90,0.01
+--check0:反転,0
+--dialog:位置調整,local posi={0,0};サイズランダム/chk,local che=0;乱数,local ran=1;回転１と２連動/chk,local link=0;
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local objtr3={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+objtr3[i]=get(3,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,objtr3,obj.check0,posi,che,ran,link,"格子マスク",4}

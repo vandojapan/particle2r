@@ -1,0 +1,58 @@
+name: Windows build and package
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Test workspace
+        run: cargo test --workspace --locked
+
+      - name: Build plugin variants
+        shell: pwsh
+        run: |
+          cargo build -p particle-aviutl2 --release --no-default-features --features stack-basic --target-dir target/stack-basic
+          cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension
+
+      - name: Install aviutl2-cli
+        shell: pwsh
+        run: Invoke-WebRequest -Uri 'https://github.com/sevenc-nanashi/aviutl2-cli/releases/download/0.11.2/au2-v0.11.2-windows.exe' -OutFile 'au2.exe'
+
+      - name: Package
+        shell: pwsh
+        run: .\au2.exe release
+
+      - name: Verify package
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = Get-ChildItem release\particle2r-v*.au2pkg.zip | Select-Object -First 1
+          if (-not $zip) { throw 'release package was not created' }
+          $archive = [IO.Compression.ZipFile]::OpenRead($zip.FullName)
+          try {
+            $names = @($archive.Entries | ForEach-Object { $_.FullName })
+            if (($names | Where-Object { $_ -like 'Plugin/*.auf2' }).Count -ne 32) { throw 'expected 32 auf2 files' }
+            if (($names | Where-Object { $_ -like 'docs/*.md' }).Count -ne 6) { throw 'expected 6 documents' }
+            if (($names | Where-Object { $_ -match '\.(aux2|mod2)$' }).Count -ne 0) { throw 'unexpected plugin type' }
+            if (($names | Where-Object { $_ -like 'templates/original/*.anm' }).Count -ne 3) { throw 'expected 3 original anm templates' }
+            if (($names | Where-Object { $_ -like 'templates/original/自作関数サンプル/*.txt' }).Count -ne 11) { throw 'expected 11 original function samples' }
+            if (($names | Where-Object { $_ -eq 'templates/original/README.md' }).Count -ne 1) { throw 'expected original template guide' }
+            if (($names | Where-Object { $_ -match '\.anm$' -and $_ -notlike 'templates/original/*.anm' }).Count -ne 0) { throw 'anm template was placed in an active plugin directory' }
+          } finally {
+            $archive.Dispose()
+          }
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: particle2r-windows
+          path: release/*.au2pkg.zip

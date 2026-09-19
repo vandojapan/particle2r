@@ -1,0 +1,7 @@
+function vector(t)
+local vx,vy,vz
+vx=0
+vy=100/t--”½”ä—á‚µ‚ÄAŠÔ‚ªŒo‚Â‚²‚Æ‚Éy•ûŒü‚Ì‘¬“x‚ª¬‚³‚­‚È‚è‚Ü‚·
+vz=0
+return vx,vy,vz
+end

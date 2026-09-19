@@ -3,5 +3,5 @@ members = ["crates/particle-core", "crates/particle-aviutl2"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.1"
+version = "0.8.0-beta.2"
 edition = "2024"

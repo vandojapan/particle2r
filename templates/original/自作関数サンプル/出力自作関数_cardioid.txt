@@ -1,0 +1,15 @@
+function xyzd(t)
+local theta=math.pi*t/1--1秒で角度が180度進むようにしています
+local x=100*(2*math.cos(theta)-math.cos(2*theta))--半径100のカージオイドを描きます
+local y=100*(2*math.sin(theta)-math.sin(2*theta))
+local z=0
+theta=math.pi*(t-0.03)/1--一つ前の角度を計算します
+local x0=100*(2*math.cos(theta)-math.cos(2*theta))--一つ前のカージオイドの座標を計算します
+local y0=100*(2*math.sin(theta)-math.sin(2*theta))
+local dxy=math.atan((y-y0)/(x-x0))--二つの差をだして、角度を計算します
+if(0<x-x0) then
+dxy=dxy+math.pi
+end
+local dz=0
+return x,y,z,dxy,dz
+end

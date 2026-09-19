@@ -1,0 +1,54 @@
+function xyz(t)
+--ここの数字は追跡するオブジェクトのレイヤーを指定する数字です。1だとパーティクルの一つ上のレイヤーのオブジェクトを追跡します
+local layer=obj.layer-1
+if layer<1 then layer=1 end
+layer="layer"..layer
+local x1=obj.getvalue(layer..".x",t)
+local y1=obj.getvalue(layer..".y",t)
+local z1=obj.getvalue(layer..".z",t)
+local t0=t-1/obj.framerate--1フレーム分進む時間を引く
+local x0,y0,z0
+if t0<0 then
+local rate=1/obj.framerate
+x0=(obj.getvalue(layer..".x",rate)-obj.getvalue(layer..".x",0))*t0/rate+obj.getvalue(layer..".x",0)
+y0=(obj.getvalue(layer..".y",rate)-obj.getvalue(layer..".y",0))*t0/rate+obj.getvalue(layer..".y",0)
+z0=(obj.getvalue(layer..".z",rate)-obj.getvalue(layer..".z",0))*t0/rate+obj.getvalue(layer..".z",0)
+else
+x0=obj.getvalue(layer..".x",t0)
+y0=obj.getvalue(layer..".y",t0)
+z0=obj.getvalue(layer..".z",t0)
+end
+local ex=x1-x0
+local ey=y1-y0
+local ez=z1-z0
+local er=(ex*ex+ey*ey+ez*ez)^0.5
+if er==0 then
+ex=1
+ey=0
+ez=0
+else
+ex=ex/er
+ey=ey/er
+ez=ez/er
+end
+local r=100--ここが円運動の半径
+local zr=r*math.cos(t*math.pi*0.5)--0.5秒で半周
+local yr=r*math.sin(t*math.pi*0.5)--0.5秒で半周
+local cos=ex
+local sin=1-cos*cos
+if sin<0 then
+sin=0
+end
+sin=(sin)^0.5
+local ny=-ez
+local nz=ey
+local nr=(ny*ny+nz*nz)^0.5
+if nr==0 then
+ny=-1
+nz=0
+else
+ny=ny/nr
+nz=nz/nr
+end
+return x1-nz*sin*yr+ny*sin*zr,y1+(ny*ny*(1-cos)+cos)*yr+ny*nz*(1-cos)*zr,z1+ny*nz*(1-cos)*yr+(nz*nz*(1-cos)+cos)*zr
+end

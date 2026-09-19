@@ -322,7 +322,7 @@ dependencies = [
 
 [[package]]
 name = "particle-aviutl2"
-version = "0.2.1"
+version = "0.8.0-beta.2"
 dependencies = [
  "aviutl2",
  "particle-core",
@@ -330,7 +330,7 @@ dependencies = [
 
 [[package]]
 name = "particle-core"
-version = "0.2.1"
+version = "0.8.0-beta.2"
 
 [[package]]
 name = "pastey"

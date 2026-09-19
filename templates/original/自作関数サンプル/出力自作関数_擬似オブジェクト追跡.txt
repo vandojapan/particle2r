@@ -1,0 +1,10 @@
+function xyz(t)
+--ここの数字は追跡するオブジェクトのレイヤーを指定する数字です。1だと@パーティクル本体のオブジェクトの一つ上のレイヤーのオブジェクトを追跡します
+local layer=obj.layer-1
+if layer<1 then layer=1 end
+layer="layer"..layer
+local x=obj.getvalue(layer..".x",t)
+local y=obj.getvalue(layer..".y",t)
+local z=obj.getvalue(layer..".z",t)
+return x,y,z
+end

@@ -1,0 +1,448 @@
+@k‚¦‚é
+--track0:U•,0,500,5
+--track1:Šp“x,0,180,10
+--track2:ŠÔŠu,0,100,0
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,"k‚¦‚é@•W€",3}
+
+@U‚èq
+--track0:‘¬‚³,0,10,2
+--track1:Šp“x,0,180,30
+--track2:‚¸‚ç‚µ,0,100,0
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,"U‚èq@•W€",3}
+
+@’e‚Ş
+--track0:‘¬‚³,0.1,100,20
+--track1:‚‚³,0,1000,150
+--track2:Šp“x,0,360,0
+--track3:‚¸‚ç‚µ,0,100,0
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local objtr3={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+objtr3[i]=get(3,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,objtr3,"’e‚Ş@•W€",4}
+
+@‰æ–ÊŠO‚©‚ç“oê
+--track0:ŠÔ,-5,5,0.5
+--track1:Šp“x,-360,360,90
+--track2:”,1,16,1,1
+--check0:ƒ‰ƒ“ƒ_ƒ€•ûŒü,0
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,obj.check0,"‰æ–ÊŠO‚©‚ç“oê@•W€",3}
+
+@ƒ‰ƒ“ƒ_ƒ€•ûŒü‚©‚ç“oê
+--track0:ŠÔ,-5,5,1.5
+--track1:‰ñ“],0,10,3
+--track2:ƒ‰ƒCƒg,0,100,30
+--check0:‰ÁŒ¸‘¬,1
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,obj.check0,"ƒ‰ƒ“ƒ_ƒ€•ûŒü‚©‚ç“oê@•W€",3}
+
+@Šg‘åk¬‚µ‚Ä“oê
+--track0:ŠÔ,-5,5,0.3
+--track1:Šg‘å—¦,0,800,300
+--check0:‰ÁŒ¸‘¬,1
+local objtr0={}
+local objtr1={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,obj.check0,"Šg‘åk¬‚µ‚Ä“oê@•W€",2}
+
+@ƒ‰ƒ“ƒ_ƒ€ŠÔŠu‚Å—‚¿‚È‚ª‚ç“oê
+--track0:ŠÔ,-5,5,0.5
+--track1:ŠÔŠu,0,5,1
+--track2:‹——£,0,1000,400
+--check0:‰ÁŒ¸‘¬,1
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,obj.check0,"ƒ‰ƒ“ƒ_ƒ€ŠÔŠu‚Å—‚¿‚È‚ª‚ç“oê@•W€",3}
+
+@’e‚ñ‚Å“oê
+--track0:ŠÔ,-5,5,2
+--track1:‚‚³,-1000,1000,200
+--track2:‰ñ”,1,20,4
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,"’e‚ñ‚Å“oê@•W€",3}
+
+@L‚ª‚Á‚Ä“oê
+--track0:ŠÔ,-5,5,0.3
+--check0:c•ûŒü,0
+local objtr0={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,obj.check0,"L‚ª‚Á‚Ä“oê@•W€",1}
+
+@‹N‚«ã‚ª‚Á‚Ä“oê
+--track0:ŠÔ,-5,5,0.6
+--track1:¨‚¢,0,8,2.0
+local objtr0={}
+local objtr1={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,"‹N‚«ã‚ª‚Á‚Ä“oê@•W€",2}
+
+@‰½ˆ‚©‚ç‚Æ‚à‚È‚­“oê
+--track0:ŠÔ,-5,5,0.3
+--track1:‚Ú‚©‚µ,0,5,1.0
+--track2:ˆÊ’u,0,5,1.5
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,"‰½ˆ‚©‚ç‚Æ‚à‚È‚­“oê@•W€",3}
+
+@”½•œˆÚ“®
+--track0:‘¬‚³,0.1,100,20
+--track1:‹——£,0,1000,100
+--track2:Šp“x,0,360,0
+--track3:‚¸‚ç‚µ,0,100,0
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local objtr3={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+objtr3[i]=get(3,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,objtr3,"”½•œˆÚ“®@•W€",4}
+
+@Ó‚¯U‚é
+--track0:ŠJnŠÔ,-100,100,0
+--track1:’†SX,-1000,1000,0
+--track2:’†SY,-1000,1000,0
+--track3:’†SZ,-1000,1000,0
+--dialog:”j•ĞƒTƒCƒY,size=50;‘¬“x,speed=100;d—Í,grav=100;ŠÔ·,delay=100;‹——£‰e‹¿,impact=100;ƒ‰ƒ“ƒ_ƒ€‰ñ“],spin=100;ƒ‰ƒ“ƒ_ƒ€•ûŒü,diff=100;Ä¶‘¬“x,step=1.0;
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local objtr3={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+objtr3[i]=get(3,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,objtr3,size,speed,grav,delay,impact,spin,diff,step,"Ó‚¯U‚é@•W€",4}
+
+@“_–Å
+--track0:‘¬‚³,0,15,1,0.01
+--track1:“_–ÅŠ„‡,0,100,50
+--track2:“_“”‘¬“x,0,100,100
+--track3:Á“”‘¬“x,0,100,75
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local objtr3={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+objtr3[i]=get(3,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,objtr3,"“_–Å@•W€",4}
+
+@“_–Å‚µ‚Ä“oê
+--track0:ŠÔ,-5,5,1
+--track1:“_–ÅŠÔŠu,1,5,1,1
+--check0:“_–ÅŠÔŠu‚ğˆê’è‚É‚·‚é,0
+local objtr0={}
+local objtr1={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,obj.check0,"“_–Å‚µ‚Ä“oê@•W€",2}
+
+@ƒŠ[ƒ‹‰ñ“]
+--track0:‰ñ“]”,-50,50,0,1
+--track1:ƒuƒ‰[,0,200,100
+--check0:‰¡‰ñ“],0
+local objtr0={}
+local objtr1={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,obj.check0,"ƒŠ[ƒ‹‰ñ“]@•W€",2}
+
+@–œ‰Ø‹¾
+--track0:’†SX,-1000,1000,0
+--track1:’†SY,-1000,1000,0
+--track2:’·‚³,0,2000,100
+--track3:‰ñ“],-3600,3600,0
+--check0:•\¦ˆÊ’uŠm”F,0
+--dialog:Šp”(‹ô”),num=6;ŒJ‚è•Ô‚µ‰ñ”,ln=2;ŒÅ’èƒTƒCƒY,size=0;‰~Œ`ƒ}ƒXƒN/chk,mask=0;‰ñ“]“¯Šú/chk,rsync=0;ƒAƒ“ƒ`ƒGƒCƒŠƒAƒX/chk,anti=1;
+local objtr0={}
+local objtr1={}
+local objtr2={}
+local objtr3={}
+local rate=1/obj.framerate
+local f=obj.totalframe+1
+local get=obj.getvalue
+for i=0,f do
+objtr0[i]=get(0,rate*i)
+objtr1[i]=get(1,rate*i)
+objtr2[i]=get(2,rate*i)
+objtr3[i]=get(3,rate*i)
+end
+local j=1
+for i=1,10 do
+if string.find(obj.getoption("script_name",-i,true),"_particle_anime") then
+j=j+1
+end
+end
+if not string.find(tostring(particle_animation),"table:") then
+particle_animation={}
+end
+particle_animation[j]={objtr0,objtr1,objtr2,objtr3,obj.check0,num,ln,size,mask,rsync,anti,"–œ‰Ø‹¾@•W€",4}

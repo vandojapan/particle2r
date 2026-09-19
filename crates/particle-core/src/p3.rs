@@ -1,6 +1,7 @@
 //! Deterministic P3 motion features. Their ordering is a port convention until
 //! a trace from the original host can establish the legacy event order.
 
+use crate::{MaskCollision, MaskCollisionMode};
 use std::f64::consts::{PI, TAU};
 
 #[derive(Clone, Copy, Debug)]
@@ -317,12 +318,13 @@ impl P3Config {
         initial_velocity: [f64; 3],
         gravity: [f64; 3],
         dispersion_impulse: [f64; 3],
+        collision: Option<MaskCollision<'_>>,
     ) -> Option<[f64; 3]> {
         let age = self.time_warp.motion_age(real_age);
         if !age.is_finite() {
             return None;
         }
-        let pos = if self.needs_integration() {
+        let pos = if self.needs_integration() || collision.is_some() {
             self.integrate(
                 birth_time,
                 age,
@@ -330,6 +332,7 @@ impl P3Config {
                 initial_velocity,
                 gravity,
                 dispersion_impulse,
+                collision,
             )?
         } else {
             std::array::from_fn(|axis| {
@@ -347,6 +350,7 @@ impl P3Config {
         initial_velocity: [f64; 3],
         gravity: [f64; 3],
         impulse: [f64; 3],
+        collision: Option<MaskCollision<'_>>,
     ) -> Option<[f64; 3]> {
         let mut pos = origin;
         let mut vel = initial_velocity;
@@ -413,9 +417,22 @@ impl P3Config {
                     acc[axis] += initial_velocity[axis] * speed_change;
                 }
             }
+            let previous_pos = pos;
             for axis in 0..3 {
                 pos[axis] += vel[axis] * dt + 0.5 * acc[axis] * dt * dt;
                 vel[axis] += acc[axis] * dt;
+            }
+            if let Some(collision) = collision {
+                if let Some(hit) = collision.first_hit(previous_pos, pos) {
+                    match collision.mode {
+                        MaskCollisionMode::Vanish => return None,
+                        MaskCollisionMode::Stop => return Some(previous_pos),
+                        MaskCollisionMode::Bounce => {
+                            collision.reflect(previous_pos, hit, &mut vel);
+                            pos = previous_pos;
+                        }
+                    }
+                }
             }
             let bounced = self.reflect(&mut pos, &mut vel);
             if bounced && self.dispersion.enabled && self.dispersion.on_bounce && !dispersed {

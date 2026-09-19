@@ -3,19 +3,480 @@
 [project]
 id = "particle2r"
 name = "particle2r"
-version = "0.2.1"
+version = "0.8.0-beta.2"
 
 [development]
 aviutl2_version = "2.1.9"
 
-[artifacts.particle_auf2]
-destination = "Plugin/particle_aviutl2.auf2"
+[artifacts.particle_basic]
+destination = "Plugin/particle_basic.auf2"
 placement_method = "copy"
 
-[artifacts.particle_auf2.profiles.debug]
-build = "cargo build -p particle-aviutl2"
-source = "target/debug/particle_aviutl2.dll"
+[artifacts.particle_basic.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-basic --target-dir target/stack-basic"
+source = "target/stack-basic/debug/particle_aviutl2.dll"
 
-[artifacts.particle_auf2.profiles.release]
-build = "cargo build -p particle-aviutl2 --release"
-source = "target/release/particle_aviutl2.dll"
+[artifacts.particle_basic.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-basic --target-dir target/stack-basic"
+source = "target/stack-basic/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_direction]
+destination = "Plugin/particle_ext_direction.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_direction.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_direction.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_output]
+destination = "Plugin/particle_ext_output.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_output.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_output.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_rotation]
+destination = "Plugin/particle_ext_rotation.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_rotation.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_rotation.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_wind]
+destination = "Plugin/particle_ext_wind.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_wind.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_wind.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_variation]
+destination = "Plugin/particle_ext_variation.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_variation.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_variation.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_time]
+destination = "Plugin/particle_ext_time.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_time.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_time.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_time2]
+destination = "Plugin/particle_ext_time2.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_time2.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_time2.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_convergence]
+destination = "Plugin/particle_ext_convergence.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_convergence.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_convergence.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_bounce]
+destination = "Plugin/particle_ext_bounce.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_bounce.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_bounce.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_mask]
+destination = "Plugin/particle_ext_mask.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_mask.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_mask.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_dispersion]
+destination = "Plugin/particle_ext_dispersion.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_dispersion.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_dispersion.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_orbit]
+destination = "Plugin/particle_ext_orbit.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_orbit.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_orbit.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_trail]
+destination = "Plugin/particle_ext_trail.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_trail.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_trail.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_path]
+destination = "Plugin/particle_ext_path.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_path.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_path.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_image]
+destination = "Plugin/particle_ext_image.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_image.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_image.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_text]
+destination = "Plugin/particle_ext_text.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_text.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_text.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_video]
+destination = "Plugin/particle_ext_video.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_video.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_video.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_filter]
+destination = "Plugin/particle_ext_filter.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_filter.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_filter.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_funnel]
+destination = "Plugin/particle_ext_funnel.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_funnel.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_funnel.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_mesh]
+destination = "Plugin/particle_ext_mesh.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_mesh.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_mesh.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_solid]
+destination = "Plugin/particle_ext_solid.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_solid.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_solid.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_glass]
+destination = "Plugin/particle_ext_glass.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_glass.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_glass.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_audio]
+destination = "Plugin/particle_ext_audio.auf2"
+placement_method = "copy"
+
+[artifacts.particle_ext_audio.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+
+[artifacts.particle_ext_audio.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.original_article_guide]
+source = "docs/original-article-guide.md"
+destination = "docs/original-article-guide.md"
+placement_method = "copy"
+
+[artifacts.compatibility_guide]
+source = "docs/compatibility.md"
+destination = "docs/compatibility.md"
+placement_method = "copy"
+
+[artifacts.original_ui_status]
+source = "docs/original-ui-implementation.md"
+destination = "docs/original-ui-implementation.md"
+placement_method = "copy"
+
+[artifacts.stacked_effects_guide]
+source = "docs/stacked-effects.md"
+destination = "docs/stacked-effects.md"
+placement_method = "copy"
+
+[artifacts.p5_progress]
+source = "docs/p5-progress.md"
+destination = "docs/p5-progress.md"
+placement_method = "copy"
+
+[artifacts.p6_progress]
+source = "docs/p6-progress.md"
+destination = "docs/p6-progress.md"
+placement_method = "copy"
+
+[artifacts.particle_ext_frontback]
+destination = "Plugin/particle_ext_frontback.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_frontback.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_frontback.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_scale_alpha]
+destination = "Plugin/particle_ext_scale_alpha.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_scale_alpha.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_scale_alpha.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_filter_monochrome]
+destination = "Plugin/particle_ext_filter_monochrome.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_filter_monochrome.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_filter_monochrome.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_behavior]
+destination = "Plugin/particle_ext_behavior.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_behavior.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_behavior.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_behavior4]
+destination = "Plugin/particle_ext_behavior4.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_behavior4.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_behavior4.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_field]
+destination = "Plugin/particle_ext_field.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_field.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_field.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_custom_object]
+destination = "Plugin/particle_ext_custom_object.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_custom_object.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_custom_object.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.particle_ext_other_animation_option]
+destination = "Plugin/particle_ext_other_animation_option.auf2"
+placement_method = "copy"
+[artifacts.particle_ext_other_animation_option.profiles.debug]
+build = "cargo build -p particle-aviutl2 --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/debug/particle_aviutl2.dll"
+[artifacts.particle_ext_other_animation_option.profiles.release]
+build = "cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension"
+source = "target/stack-extension/release/particle_aviutl2.dll"
+
+[artifacts.original_templates_readme]
+source = "templates/original/README.md"
+destination = "templates/original/README.md"
+placement_method = "copy"
+
+[artifacts.original_template_main]
+source = "templates/original/@particle_ri_ver3.anm"
+destination = "templates/original/@particle_ri_ver3.anm"
+placement_method = "copy"
+
+[artifacts.original_template_standard]
+source = "templates/original/@標準_particle_anime.anm"
+destination = "templates/original/@標準_particle_anime.anm"
+placement_method = "copy"
+
+[artifacts.original_template_grid_mask]
+source = "templates/original/格子マスク_particle_anime.anm"
+destination = "templates/original/格子マスク_particle_anime.anm"
+placement_method = "copy"
+
+[artifacts.original_function_behavior_1]
+source = "templates/original/自作関数サンプル/挙動自作関数その1.txt"
+destination = "templates/original/自作関数サンプル/挙動自作関数その1.txt"
+placement_method = "copy"
+
+[artifacts.original_function_behavior_2]
+source = "templates/original/自作関数サンプル/挙動自作関数その2.txt"
+destination = "templates/original/自作関数サンプル/挙動自作関数その2.txt"
+placement_method = "copy"
+
+[artifacts.original_function_behavior_3]
+source = "templates/original/自作関数サンプル/挙動自作関数その3.txt"
+destination = "templates/original/自作関数サンプル/挙動自作関数その3.txt"
+placement_method = "copy"
+
+[artifacts.original_function_output_behavior]
+source = "templates/original/自作関数サンプル/出力と挙動自作関数.txt"
+destination = "templates/original/自作関数サンプル/出力と挙動自作関数.txt"
+placement_method = "copy"
+
+[artifacts.original_function_output]
+source = "templates/original/自作関数サンプル/出力自作関数.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数.txt"
+placement_method = "copy"
+
+[artifacts.original_function_asteroid]
+source = "templates/original/自作関数サンプル/出力自作関数_asteroid.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数_asteroid.txt"
+placement_method = "copy"
+
+[artifacts.original_function_cardioid]
+source = "templates/original/自作関数サンプル/出力自作関数_cardioid.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数_cardioid.txt"
+placement_method = "copy"
+
+[artifacts.original_function_heart]
+source = "templates/original/自作関数サンプル/出力自作関数_heart.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数_heart.txt"
+placement_method = "copy"
+
+[artifacts.original_function_trochoid]
+source = "templates/original/自作関数サンプル/出力自作関数_trochoid.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数_trochoid.txt"
+placement_method = "copy"
+
+[artifacts.original_function_tracking]
+source = "templates/original/自作関数サンプル/出力自作関数_擬似オブジェクト追跡.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数_擬似オブジェクト追跡.txt"
+placement_method = "copy"
+
+[artifacts.original_function_tracking_orbit]
+source = "templates/original/自作関数サンプル/出力自作関数_擬似オブジェクト追跡＋円運動.txt"
+destination = "templates/original/自作関数サンプル/出力自作関数_擬似オブジェクト追跡＋円運動.txt"
+placement_method = "copy"

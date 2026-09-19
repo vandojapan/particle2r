@@ -1,0 +1,7 @@
+function xyz(t)
+local theta=math.pi*t/1--1秒で角度が180進むようにしています
+local x=300*math.cos(theta)*math.cos(theta)*math.cos(theta)--半径300のアステロイドを描きます
+local y=300*math.sin(theta)*math.sin(theta)*math.sin(theta)
+local z=0
+return x,y,z
+end

@@ -1,0 +1,10 @@
+function xyz(t)
+local theta=2*math.pi*t/5--5秒で360度進むようにします
+local rc=5--rc,rm,rdはトロコイドの性質を決めるもので、詳しくは各人で調べてください
+local rm=3
+local rd=5
+local x=10*((rc-rm)*math.cos(theta)+rd*math.cos((rc-rm)/rm*theta))
+local y=10*((rc-rm)*math.sin(theta)-rd*math.sin((rc-rm)/rm*theta))
+local z=0
+return x,y,z
+end
