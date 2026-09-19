@@ -14,6 +14,21 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install aviutl2-cli
+        shell: pwsh
+        run: Invoke-WebRequest -Uri 'https://github.com/sevenc-nanashi/aviutl2-cli/releases/download/0.11.2/au2-v0.11.2-windows.exe' -OutFile 'au2.exe'
+
+      - name: Prepare AviUtl2 runtime
+        shell: pwsh
+        run: |
+          .\au2.exe prepare:aviutl2
+          if ($LASTEXITCODE -ne 0) {
+            throw "aviutl2-cli failed with exit code $LASTEXITCODE"
+          }
+          if (-not (Test-Path -LiteralPath '.aviutl2-cli/development/lua.dll' -PathType Leaf)) {
+            throw 'AviUtl2 lua.dll was not prepared'
+          }
+
       - name: Test workspace
         run: cargo test --workspace --locked
 
@@ -22,10 +37,6 @@ jobs:
         run: |
           cargo build -p particle-aviutl2 --release --no-default-features --features stack-basic --target-dir target/stack-basic
           cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension
-
-      - name: Install aviutl2-cli
-        shell: pwsh
-        run: Invoke-WebRequest -Uri 'https://github.com/sevenc-nanashi/aviutl2-cli/releases/download/0.11.2/au2-v0.11.2-windows.exe' -OutFile 'au2.exe'
 
       - name: Package
         shell: pwsh
