@@ -42,6 +42,15 @@ jobs:
         shell: pwsh
         run: .\au2.exe release
 
+      - name: Resolve au2 package name
+        id: package
+        shell: pwsh
+        run: |
+          $packages = @(Get-ChildItem -LiteralPath release -Filter 'particle2r-*.au2pkg.zip' -File)
+          if ($packages.Count -ne 1) { throw "expected exactly one au2 package, found $($packages.Count)" }
+          "name=$($packages[0].Name)" >> $env:GITHUB_OUTPUT
+          "path=$($packages[0].FullName)" >> $env:GITHUB_OUTPUT
+
       - name: Verify package
         shell: pwsh
         run: |
@@ -65,5 +74,6 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: particle2r-windows
-          path: release/*.au2pkg.zip
+          name: ${{ steps.package.outputs.name }}
+          path: ${{ steps.package.outputs.path }}
+          if-no-files-found: error
