@@ -316,16 +316,20 @@ impl FilterPlugin for StackExtensionFilter {
     }
 }
 
-fn item_track(items: &[FilterConfigItem], name: &str) -> Option<i32> {
+fn item_track_value(items: &[FilterConfigItem], name: &str) -> Option<f64> {
     items.iter().find_map(|item| match item {
-        FilterConfigItem::Track(track) if track.name == name => Some(track.value as i32),
+        FilterConfigItem::Track(track) if track.name == name => Some(track.value),
         FilterConfigItem::TrackGroup(group) => group
             .tracks
             .iter()
             .find(|track| track.name == name)
-            .map(|track| track.value as i32),
+            .map(|track| track.value),
         _ => None,
     })
+}
+
+fn item_track(items: &[FilterConfigItem], name: &str) -> Option<i32> {
+    item_track_value(items, name).map(|value| value as i32)
 }
 
 fn item_string<'a>(items: &'a [FilterConfigItem], name: &str) -> Option<&'a str> {
@@ -380,13 +384,24 @@ fn parse_numbers(value: &str) -> Vec<f64> {
 }
 
 fn dialog_number(items: &[FilterConfigItem], label: &str, key: &str) -> Option<f64> {
-    item_string(items, &format!("{label} ({key})")).and_then(parse_number)
+    let name = format!("{label} ({key})");
+    item_track_value(items, &name).or_else(|| item_string(items, &name).and_then(parse_number))
 }
 
 fn dialog_numbers(items: &[FilterConfigItem], label: &str, key: &str) -> Vec<f64> {
-    item_string(items, &format!("{label} ({key})"))
-        .map(parse_numbers)
+    let name = format!("{label} ({key})");
+    item_track_value(items, &name)
+        .map(|value| vec![value])
+        .or_else(|| item_string(items, &name).map(parse_numbers))
         .unwrap_or_default()
+}
+
+fn legacy_xyz_z(values: &[f64]) -> Option<f64> {
+    match values {
+        [value] => Some(*value),
+        [_, _, z, ..] => Some(*z),
+        _ => None,
+    }
 }
 
 fn apply_basic(items: &[FilterConfigItem], ui: &mut FilterConfig) {
@@ -410,8 +425,12 @@ fn apply_basic(items: &[FilterConfigItem], ui: &mut FilterConfig) {
         ui.gravity_y = gravity[1].round() as i32;
     }
     let rotation = dialog_numbers(items, "各xyz回転速度", "degvxyz");
-    if rotation.len() >= 3 {
-        ui.rotation_z_speed = rotation[2].round() as i32;
+    if let Some(value) = legacy_xyz_z(&rotation) {
+        ui.rotation_z_speed = value.round() as i32;
+    }
+    let initial_rotation = dialog_numbers(items, "各xyz回転初期値", "rotxyz");
+    if let Some(value) = legacy_xyz_z(&initial_rotation) {
+        ui.rotation_z_initial = value.round() as i32;
     }
     if let Some(value) = dialog_number(items, "生存時間(秒", "ju") {
         ui.lifetime_centis = (value * 100.0).round() as i32;
@@ -554,7 +573,7 @@ impl ScriptSettings {
                     .map(|path| path.to_string_lossy())
                     .collect::<Vec<_>>()
                     .join("\n");
-                ui.image_random = random as i32;
+                ui.image_random = random;
             }
         }
         if let Some((number, lines)) = self.text_path {
@@ -579,7 +598,7 @@ impl ScriptSettings {
                     .map(|path| path.to_string_lossy())
                     .collect::<Vec<_>>()
                     .join("\n");
-                ui.funnel_image_random = 1;
+                ui.funnel_image_random = true;
             }
         }
         if let Some(number) = self.solid_path {
@@ -613,6 +632,11 @@ fn apply_extensions(video: &mut FilterProcVideo<()>, ui: &mut FilterConfig) -> S
     };
     // The edit section lists effects in display order. The first renderer is
     // the bottom boundary of the extension stack for this particle object.
+    // Standard Script Control is different: it is a host effect whose source
+    // is shared by the output/behavior adapters, so its placement must not
+    // make the source disappear. Keep scanning after the particle renderer
+    // for that source, while retaining the renderer boundary for extensions.
+    let mut extensions_above_basic = true;
     for effect in effects {
         let Ok(name) = section.get_effect_name(effect) else {
             continue;
@@ -628,7 +652,11 @@ fn apply_extensions(video: &mut FilterProcVideo<()>, ui: &mut FilterConfig) -> S
         }
         if name == BASIC_NAME || name == format!("{}{}", BASIC_NAME, crate::PARTICLE_SCRIPT_SUFFIX)
         {
-            break;
+            extensions_above_basic = false;
+            continue;
+        }
+        if !extensions_above_basic {
+            continue;
         }
         let Some(kind) = Kind::from_name(&name) else {
             continue;
@@ -655,12 +683,65 @@ fn effect_dialog_text(
 fn effect_dialog_numbers(
     section: &aviutl2::generic::ReadSection,
     effect: aviutl2::generic::EffectHandle,
+    frame: f64,
     label: &str,
     key: &str,
 ) -> Vec<f64> {
-    effect_dialog_text(section, effect, label, key)
-        .map(|value| parse_numbers(&value))
+    let name = format!("{label} ({key})");
+    section
+        .get_effect_track_value(effect, &name, frame)
+        .ok()
+        .filter(|value| value.is_finite())
+        .map(|value| vec![value])
+        .or_else(|| {
+            section
+                .get_effect_item_value(effect, &name)
+                .ok()
+                .map(|value| parse_numbers(&value))
+        })
         .unwrap_or_default()
+}
+
+fn effect_dialog_number(
+    section: &aviutl2::generic::ReadSection,
+    effect: aviutl2::generic::EffectHandle,
+    frame: f64,
+    label: &str,
+    key: &str,
+) -> Option<f64> {
+    effect_dialog_numbers(section, effect, frame, label, key)
+        .into_iter()
+        .next()
+}
+
+fn effect_dialog_check(
+    section: &aviutl2::generic::ReadSection,
+    effect: aviutl2::generic::EffectHandle,
+    frame: f64,
+    label: &str,
+    key: &str,
+) -> bool {
+    effect_dialog_number(section, effect, frame, label, key).map_or_else(
+        || effect_dialog_text(section, effect, label, key).is_some_and(|value| parse_check(&value)),
+        |value| value != 0.0,
+    )
+}
+
+fn effect_item_check(
+    section: &aviutl2::generic::ReadSection,
+    effect: aviutl2::generic::EffectHandle,
+    frame: f64,
+    name: &str,
+) -> bool {
+    section
+        .get_effect_track_value(effect, name, frame)
+        .ok()
+        .filter(|value| value.is_finite())
+        .is_some_and(|value| value.round() != 0.0)
+        || section
+            .get_effect_item_value(effect, name)
+            .ok()
+            .is_some_and(|value| parse_check(&value))
 }
 
 fn apply_kind(
@@ -708,24 +789,14 @@ fn apply_kind(
             }
         }
         Kind::FrontBack => {
-            script.options.reverse_draw_order = section
-                .get_effect_track_value(effect, "前⇔後", frame)
-                .ok()
-                .is_some_and(|value| value.is_finite() && value.round() != 0.0);
-            script.options.face_mode = section
-                .get_effect_track_value(effect, "表裏(裏2", frame)
-                .ok()
-                .filter(|value| value.is_finite())
-                .map(|value| (value.round() as i32).clamp(0, 2))
-                .unwrap_or(0);
+            script.options.reverse_draw_order = effect_item_check(section, effect, frame, "前⇔後");
+            script.options.face_mode = effect_item_check(section, effect, frame, "表裏合成") as i32;
             script.options.inverse_frequency =
-                effect_dialog_text(section, effect, "頻度逆転/chk", "ref")
-                    .is_some_and(|value| parse_check(&value));
-            script.options.reverse_time = effect_dialog_text(section, effect, "逆再生/chk", "rep")
-                .is_some_and(|value| parse_check(&value));
+                effect_dialog_check(section, effect, frame, "頻度逆転/chk", "ref");
+            script.options.reverse_time =
+                effect_dialog_check(section, effect, frame, "逆再生/chk", "rep");
             script.options.face_direction =
-                effect_dialog_text(section, effect, "進行方向を向く/chk", "prog")
-                    .is_some_and(|value| parse_check(&value));
+                effect_dialog_check(section, effect, frame, "進行方向を向く/chk", "prog");
             set!(rotation_order, "回転表現");
         }
         Kind::Direction => {
@@ -748,12 +819,7 @@ fn apply_kind(
                     _ => 0,
                 };
             }
-            let option = section
-                .get_effect_track_value(effect, "ｵﾌﾟｼｮﾝ", frame)
-                .ok()
-                .filter(|value| value.is_finite())
-                .map(|value| value.round() as i32)
-                .unwrap_or(0);
+            let option = effect_item_check(section, effect, frame, "ｵﾌﾟｼｮﾝ") as i32;
             script.output = (output_type == 8).then(|| {
                 if option == 0 {
                     let number = section
@@ -793,7 +859,7 @@ fn apply_kind(
             // The original graph-based wind format needs the P5 graph evaluator.
         }
         Kind::Variation => {
-            let values = effect_dialog_numbers(section, effect, "速度", "bv");
+            let values = effect_dialog_numbers(section, effect, frame, "速度", "bv");
             if let Some(value) = values.first() {
                 ui.variation_speed = value.abs().round() as i32;
             }
@@ -806,21 +872,21 @@ fn apply_kind(
             // Original graph selection is retained in the UI and documented as pending.
         }
         Kind::Convergence => {
-            ui.converge_enabled = 1;
+            ui.converge_enabled = true;
             set!(converge_x, "x座標");
             set!(converge_y, "y座標");
             set!(converge_z, "z座標");
-            if let Some(value) = effect_dialog_text(section, effect, "集結開始時間ms", "contime")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) =
+                effect_dialog_number(section, effect, frame, "集結開始時間ms", "contime")
             {
                 ui.converge_start_ms = value.round() as i32;
             }
         }
         Kind::Bounce => {
-            ui.bounce_enabled = 1;
-            let x = effect_dialog_numbers(section, effect, "x範囲", "xrange");
-            let y = effect_dialog_numbers(section, effect, "y範囲", "yrange");
-            let z = effect_dialog_numbers(section, effect, "z範囲", "zrange");
+            ui.bounce_enabled = true;
+            let x = effect_dialog_numbers(section, effect, frame, "x範囲", "xrange");
+            let y = effect_dialog_numbers(section, effect, frame, "y範囲", "yrange");
+            let z = effect_dialog_numbers(section, effect, frame, "z範囲", "zrange");
             if x.len() >= 2 {
                 ui.bounce_x_min = x[0].round() as i32;
                 ui.bounce_x_max = x[1].round() as i32;
@@ -833,38 +899,35 @@ fn apply_kind(
                 ui.bounce_z_min = z[0].round() as i32;
                 ui.bounce_z_max = z[1].round() as i32;
             }
-            let restitution = effect_dialog_numbers(section, effect, "xyz反発係数", "ex");
+            let restitution = effect_dialog_numbers(section, effect, frame, "xyz反発係数", "ex");
             if let Some(value) = restitution.first() {
                 ui.bounce_restitution = (value * 100.0).round() as i32;
             }
         }
         Kind::Mask => {
-            let layers = effect_dialog_numbers(section, effect, "ﾚｲﾔｰ", "relayer");
+            let layers = effect_dialog_numbers(section, effect, frame, "ﾚｲﾔｰ", "relayer");
             if let Some(value) = layers.first() {
                 ui.mask_layer = value.round() as i32;
             }
-            let restitution = effect_dialog_numbers(section, effect, "各反発係数", "ree");
+            let restitution = effect_dialog_numbers(section, effect, frame, "各反発係数", "ree");
             if let Some(value) = restitution.first() {
                 ui.mask_restitution = (value * 100.0).round() as i32;
             }
             ui.mask_mode = 3;
         }
         Kind::Behavior => {
-            let own_function = effect_dialog_text(section, effect, "*自作関数/chk", "orifunc")
-                .and_then(|value| parse_number(&value))
-                .is_some_and(|value| value != 0.0);
+            let own_function =
+                effect_dialog_check(section, effect, frame, "*自作関数/chk", "orifunc");
             let script_source =
-                effect_dialog_text(section, effect, "*ｽｸﾘﾌﾟﾄ制御記述/chk", "scriptf")
-                    .and_then(|value| parse_number(&value))
-                    .is_some_and(|value| value != 0.0);
+                effect_dialog_check(section, effect, frame, "*ｽｸﾘﾌﾟﾄ制御記述/chk", "scriptf");
             script.behavior = if own_function {
                 if script_source {
                     Some(ScriptSource::Standard)
                 } else {
-                    let number = effect_dialog_text(section, effect, "*取得ﾊﾟｽ番号", "pathn")
-                        .and_then(|value| parse_number(&value))
-                        .map(|value| value.round() as i32)
-                        .unwrap_or(0);
+                    let number =
+                        effect_dialog_number(section, effect, frame, "*取得ﾊﾟｽ番号", "pathn")
+                            .map(|value| value.round() as i32)
+                            .unwrap_or(0);
                     (1..=10)
                         .contains(&number)
                         .then_some(ScriptSource::Path(number))
@@ -882,7 +945,7 @@ fn apply_kind(
         | Kind::CustomObject
         | Kind::OtherAnimationOption => {}
         Kind::Dispersion => {
-            ui.disperse_enabled = 1;
+            ui.disperse_enabled = true;
             set!(disperse_after_ms, "分散ﾀｲﾑms");
             set!(disperse_xy, "xy拡散度");
             set!(disperse_z, "z拡散度");
@@ -894,8 +957,7 @@ fn apply_kind(
             set!(orbit_y, "中心y");
             set!(orbit_z, "中心z");
             set!(orbit_angular_speed, "角速度");
-            if let Some(value) = effect_dialog_text(section, effect, "半径速度", "hd")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) = effect_dialog_number(section, effect, frame, "半径速度", "hd")
             {
                 ui.orbit_radial_speed = value.round() as i32;
             }
@@ -916,10 +978,7 @@ fn apply_kind(
                 .filter(|value| value.is_finite())
                 .map(|value| value.round() as i32)
                 .unwrap_or(0);
-            let random = section
-                .get_effect_track_value(effect, "ぱらばら", frame)
-                .ok()
-                .is_some_and(|value| value.is_finite() && value.round() != 0.0);
+            let random = effect_item_check(section, effect, frame, "ぱらばら");
             script.image_path = (1..=10).contains(&number).then_some((number, random));
         }
         Kind::Text => {
@@ -931,8 +990,7 @@ fn apply_kind(
             if let Some(value) = effect_dialog_text(section, effect, "テキスト", "pstr") {
                 ui.source_text = value.trim_matches('"').to_string();
             }
-            let number = effect_dialog_text(section, effect, "ﾊﾟｽ取得0~10", "gpath")
-                .and_then(|value| parse_number(&value))
+            let number = effect_dialog_number(section, effect, frame, "ﾊﾟｽ取得0~10", "gpath")
                 .map(|value| value.round() as i32)
                 .unwrap_or(0);
             script.text_path = (1..=10).contains(&number).then_some((number, lines));
@@ -950,8 +1008,7 @@ fn apply_kind(
             set!(funnel_scale, "ｻｲｽﾞ");
             set!(funnel_radius, "半径");
             set!(funnel_rings, "円環数");
-            if let Some(value) = effect_dialog_text(section, effect, "公転速度", "revo")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) = effect_dialog_number(section, effect, frame, "公転速度", "revo")
             {
                 ui.funnel_angular_speed = value.round() as i32;
             }
@@ -968,14 +1025,13 @@ fn apply_kind(
                         .filter(|number| (1..=10).contains(number));
                 }
             }
-            if let Some(value) = effect_dialog_text(section, effect, "自転速度", "rot")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) = effect_dialog_number(section, effect, frame, "自転速度", "rot")
             {
                 ui.funnel_self_spin = value.round() as i32;
             }
         }
         Kind::Mesh => {
-            ui.mesh_enabled = 1;
+            ui.mesh_enabled = true;
             set!(mesh_alpha, "透過率");
         }
         Kind::Solid => {
@@ -983,18 +1039,17 @@ fn apply_kind(
             set!(solid_shape, "タイプ");
             set!(solid_size, "大きさ");
             set!(solid_divisions, "分割数");
-            if let Some(value) = effect_dialog_text(section, effect, "ﾀｲﾌﾟ4横曲率", "kyoku1")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) =
+                effect_dialog_number(section, effect, frame, "ﾀｲﾌﾟ4横曲率", "kyoku1")
             {
                 ui.solid_curve_x = value.round() as i32;
             }
-            if let Some(value) = effect_dialog_text(section, effect, "ﾀｲﾌﾟ4縦曲率", "kyoku2")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) =
+                effect_dialog_number(section, effect, frame, "ﾀｲﾌﾟ4縦曲率", "kyoku2")
             {
                 ui.solid_curve_y = value.round() as i32;
             }
-            if let Some(value) = effect_dialog_text(section, effect, "ﾀｲﾌﾟ5奥行き", "oku")
-                .and_then(|value| parse_number(&value))
+            if let Some(value) = effect_dialog_number(section, effect, frame, "ﾀｲﾌﾟ5奥行き", "oku")
             {
                 ui.solid_depth = value.round() as i32;
             }
@@ -1057,6 +1112,26 @@ mod tests {
         assert_eq!(config.speed, 100);
         assert_eq!(config.lifetime_centis, 300);
         assert_eq!(config.alpha_end, 50);
+        assert_eq!(config.rotation_z_initial, 0);
+        assert_eq!(config.rotation_z_speed, 60);
+    }
+
+    #[test]
+    fn basic_rotation_accepts_legacy_xyz_tables_and_single_values() {
+        let mut basic = StackBasicFilter.plugin_info().config_items;
+        for item in &mut basic {
+            if let FilterConfigItem::String(value) = item {
+                match value.name.as_str() {
+                    "各xyz回転初期値 (rotxyz)" => value.value = "{0,0,25}".to_string(),
+                    "各xyz回転速度 (degvxyz)" => value.value = "-120".to_string(),
+                    _ => {}
+                }
+            }
+        }
+        let mut config = FilterConfig::default();
+        apply_basic(&basic, &mut config);
+        assert_eq!(config.rotation_z_initial, 25);
+        assert_eq!(config.rotation_z_speed, -120);
     }
 
     #[test]

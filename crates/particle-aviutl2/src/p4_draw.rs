@@ -110,7 +110,7 @@ impl DrawContext<'_> {
         if files.is_empty() {
             return self.draw_image(video, &self.source.clone(), particle);
         }
-        let selection = if self.config.image_random != 0 {
+        let selection = if self.config.image_random {
             // Stable integer mixing keeps the selection deterministic while
             // reproducing the legacy 「ぱらばら」 intent.
             let mut value = particle.id ^ 0x9e37_79b9_7f4a_7c15;
@@ -609,6 +609,27 @@ mod tests {
             PathBuf::from("a/0042.png")
         );
         assert!(sequence_path("a/fixed.png", 42).is_none());
+    }
+
+    #[test]
+    fn source_image_quad_uses_particle_z_rotation() {
+        let particle = ParticleSample {
+            id: 0,
+            birth_time: 0.0,
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            rx: 0.0,
+            ry: 0.0,
+            rz: 90.0,
+            scale: 1.0,
+            alpha: 1.0,
+        };
+        let vertices = quad(particle, 40.0, 20.0, [0.0, 0.0, 1.0, 1.0]);
+        assert!((vertices[0].x - 10.0).abs() < 0.001);
+        assert!((vertices[0].y + 20.0).abs() < 0.001);
+        assert!((vertices[1].x - 10.0).abs() < 0.001);
+        assert!((vertices[1].y - 20.0).abs() < 0.001);
     }
 
     #[test]

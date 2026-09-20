@@ -8,6 +8,7 @@ use std::{
 };
 
 use crate::FilterConfig;
+use crate::script_control::{self, HostValueTrace};
 
 const FILTER_NAME: &str = "パーティクル(R) 基本版";
 
@@ -220,6 +221,57 @@ pub(super) fn tracking_delta(
     delta.iter().all(|value| value.is_finite()).then_some(delta)
 }
 
+/// Samples the layer immediately above the particle object for the bundled
+/// `obj.getvalue("N.x", t)` custom functions. AviUtl2's API is zero-based;
+/// the Lua-facing layer number stored in the trace is one-based.
+pub(super) fn previous_layer_value_trace(
+    video: &mut FilterProcVideo<()>,
+    duration: f64,
+) -> Option<HostValueTrace> {
+    let current_legacy_layer = video.object.layer.saturating_add(1);
+    let target_legacy_layer = current_legacy_layer.saturating_sub(1).max(1);
+    let target_layer = target_legacy_layer - 1;
+    if target_layer == video.object.layer {
+        warn_once(
+            format!("script-getvalue-self-{}", video.object.id),
+            "パーティクル(R): obj.getvalue の参照先が現在のレイヤーのため座標0を使用します"
+                .to_string(),
+        );
+        return None;
+    }
+
+    let (step, count) = script_control::curve_layout(duration.max(0.0));
+    let mut values = Vec::with_capacity(count);
+    let mut found = false;
+    for index in 0..count {
+        let time = index as f64 * step;
+        let offset = time - video.object.time;
+        let value = video
+            .get_image_object(target_layer, offset)
+            .and_then(|object| video.get_output_image_param(Some(object), offset).ok())
+            .map(|param| [param.x as f64, param.y as f64, param.z as f64])
+            .filter(|value| value.iter().all(|component| component.is_finite()));
+        if let Some(value) = value {
+            found = true;
+            values.push(value);
+        } else {
+            values.push([0.0; 3]);
+        }
+    }
+    if !found {
+        warn_once(
+            format!("script-getvalue-layer-{target_layer}"),
+            format!(
+                "パーティクル(R): obj.getvalue の参照先レイヤー {} が見つからないため座標0を使用します",
+                target_legacy_layer
+            ),
+        );
+        None
+    } else {
+        Some(HostValueTrace::new(target_legacy_layer, step, values))
+    }
+}
+
 pub(super) fn offset_sample(particle: &mut ParticleSample, delta: [f32; 3]) {
     particle.x += delta[0];
     particle.y += delta[1];
@@ -240,7 +292,7 @@ pub(super) fn apply_tracking(
         .iter_mut()
         .chain(batch.trail_images.iter_mut())
     {
-        let delta = if ui.tracking_time == 1 && by_birth.len() < 4096 {
+        let delta = if ui.tracking_time && by_birth.len() < 4096 {
             *by_birth
                 .entry(particle.birth_time.to_bits())
                 .or_insert_with(|| {

@@ -6,9 +6,9 @@
 use aviutl2::{
     AnyResult,
     filter::{
-        FilterConfigFile, FilterConfigItem, FilterConfigItemSliceExt, FilterConfigItems,
-        FilterConfigString, FilterConfigText, FilterConfigTrack, FilterConfigTrackGroup,
-        FilterPlugin, FilterPluginTable, FilterProcVideo, ImageResource,
+        FilterConfigCheck, FilterConfigFile, FilterConfigItem, FilterConfigItemSliceExt,
+        FilterConfigItems, FilterConfigString, FilterConfigText, FilterConfigTrack,
+        FilterConfigTrackGroup, FilterPlugin, FilterPluginTable, FilterProcVideo, ImageResource,
         OutputImageResourcePixelFormat, VertexColor, VertexList,
     },
 };
@@ -72,7 +72,9 @@ struct FilterConfig {
     gravity_y: i32,
     #[track(name = "重力Z", range = -10000..=10000, step = 1.0, default = 0, group = "運動")]
     gravity_z: i32,
-    #[track(name = "回転速度Z 度/秒", range = -3600..=3600, step = 1.0, default = 60, group = "運動")]
+    #[track(name = "初期回転Z 度", range = -360..=360, step = 1.0, default = 0, group = "運動")]
+    rotation_z_initial: i32,
+    #[track(name = "回転速度Z 度/秒", range = -3600..=3600, step = 1.0, default = 0, group = "運動")]
     rotation_z_speed: i32,
     #[track(name = "開始透過率 %", range = 0..=100, step = 1.0, default = 100, group = "表示")]
     alpha_start: i32,
@@ -92,8 +94,8 @@ struct FilterConfig {
     sequence_pattern: String,
     #[text(name = "画像一覧 (1行1ファイル)")]
     image_files: String,
-    #[track(name = "画像一覧をランダム", range = 0..=1, step = 1.0, default = 0, group = "P4 素材")]
-    image_random: i32,
+    #[check(name = "画像一覧をランダム", default = false)]
+    image_random: bool,
     #[track(name = "連番fps", range = 1..=240, step = 1.0, default = 30, group = "P4 素材")]
     sequence_fps: i32,
     #[track(name = "素材時刻 0現在 1出生 2年齢", range = 0..=2, step = 1.0, default = 2, group = "P4 素材")]
@@ -140,8 +142,8 @@ struct FilterConfig {
     audio_zoom_depth: i32,
     #[track(name = "追跡レイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 素材")]
     tracking_layer: i32,
-    #[track(name = "追跡時刻 0現在 1出生", range = 0..=1, step = 1.0, default = 0, group = "P4 素材")]
-    tracking_time: i32,
+    #[check(name = "追跡時刻 0現在 1出生", default = false)]
+    tracking_time: bool,
     #[track(name = "共有風レイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 共有")]
     shared_wind_layer: i32,
     #[track(name = "共有時間レイヤー (-1=無効)", range = -1..=100, step = 1.0, default = -1, group = "P4 共有")]
@@ -154,8 +156,8 @@ struct FilterConfig {
     mask_threshold: i32,
     #[track(name = "マスク反発係数 %", range = 0..=200, step = 1.0, default = 100, group = "P4 マスク")]
     mask_restitution: i32,
-    #[track(name = "メッシュを使用", range = 0..=1, step = 1.0, default = 0, group = "P4 メッシュ")]
-    mesh_enabled: i32,
+    #[check(name = "メッシュを使用", default = false)]
+    mesh_enabled: bool,
     #[track(name = "接続距離", range = 1..=4000, step = 1.0, default = 100, group = "P4 メッシュ")]
     mesh_distance: i32,
     #[track(name = "粒子ごとの最大接続", range = 1..=16, step = 1.0, default = 2, group = "P4 メッシュ")]
@@ -164,8 +166,8 @@ struct FilterConfig {
     mesh_width: i32,
     #[track(name = "線の透過率 %", range = 0..=100, step = 1.0, default = 50, group = "P4 メッシュ")]
     mesh_alpha: i32,
-    #[track(name = "面を描画", range = 0..=1, step = 1.0, default = 0, group = "P4 メッシュ")]
-    mesh_faces: i32,
+    #[check(name = "面を描画", default = false)]
+    mesh_faces: bool,
     #[track(name = "線色 R", range = 0..=255, step = 1.0, default = 255, group = "P4 メッシュ")]
     mesh_r: i32,
     #[track(name = "線色 G", range = 0..=255, step = 1.0, default = 255, group = "P4 メッシュ")]
@@ -186,8 +188,8 @@ struct FilterConfig {
     funnel_self_spin: i32,
     #[text(name = "ファンネル画像一覧 (1行1ファイル)")]
     funnel_image_files: String,
-    #[track(name = "ファンネル画像をランダム", range = 0..=1, step = 1.0, default = 1, group = "P4 ファンネル")]
-    funnel_image_random: i32,
+    #[check(name = "ファンネル画像をランダム", default = true)]
+    funnel_image_random: bool,
 
     #[track(name = "風X 開始", range = -10000..=10000, step = 1.0, default = 0, group = "P3 風")]
     wind_from_x: i32,
@@ -240,8 +242,8 @@ struct FilterConfig {
     #[track(name = "進行時間ずれ ms", range = -90000..=90000, step = 1.0, default = 0, group = "P3 時間")]
     time_offset_ms: i32,
 
-    #[track(name = "集結を使用", range = 0..=1, step = 1.0, default = 0, group = "P3 集結")]
-    converge_enabled: i32,
+    #[check(name = "集結を使用", default = false)]
+    converge_enabled: bool,
     #[track(name = "集結点X", range = -8000..=8000, step = 1.0, default = 0, group = "P3 集結")]
     converge_x: i32,
     #[track(name = "集結点Y", range = -8000..=8000, step = 1.0, default = 0, group = "P3 集結")]
@@ -257,8 +259,8 @@ struct FilterConfig {
     #[track(name = "到着後 0継続 1停止 2消失", range = 0..=2, step = 1.0, default = 0, group = "P3 集結")]
     converge_arrival: i32,
 
-    #[track(name = "境界反射を使用", range = 0..=1, step = 1.0, default = 0, group = "P3 反射")]
-    bounce_enabled: i32,
+    #[check(name = "境界反射を使用", default = false)]
+    bounce_enabled: bool,
     #[track(name = "X最小", range = -10000..=10000, step = 1.0, default = -640, group = "P3 反射")]
     bounce_x_min: i32,
     #[track(name = "X最大", range = -10000..=10000, step = 1.0, default = 640, group = "P3 反射")]
@@ -274,8 +276,8 @@ struct FilterConfig {
     #[track(name = "反発係数 %", range = 0..=200, step = 1.0, default = 90, group = "P3 反射")]
     bounce_restitution: i32,
 
-    #[track(name = "分散を使用", range = 0..=1, step = 1.0, default = 0, group = "P3 分散")]
-    disperse_enabled: i32,
+    #[check(name = "分散を使用", default = false)]
+    disperse_enabled: bool,
     #[track(name = "分散時間 ms", range = 0..=90000, step = 1.0, default = 1000, group = "P3 分散")]
     disperse_after_ms: i32,
     #[track(name = "分散速度", range = 0..=10000, step = 1.0, default = 0, group = "P3 分散")]
@@ -284,8 +286,8 @@ struct FilterConfig {
     disperse_xy: i32,
     #[track(name = "分散Z角度", range = 0..=180, step = 1.0, default = 0, group = "P3 分散")]
     disperse_z: i32,
-    #[track(name = "反射で分散", range = 0..=1, step = 1.0, default = 0, group = "P3 分散")]
-    disperse_on_bounce: i32,
+    #[check(name = "反射で分散", default = false)]
+    disperse_on_bounce: bool,
     #[track(name = "急停止時間 ms (0無効)", range = 0..=90000, step = 1.0, default = 0, group = "P3 分散")]
     stop_after_ms: i32,
 
@@ -354,7 +356,7 @@ impl FilterConfig {
         p3.modulation.zoom = wave(self.wave_zoom, self.wave_zoom_period);
         p3.time_warp.scale = self.time_scale_pct as f64 / 100.0;
         p3.time_warp.offset = self.time_offset_ms as f64 / 1000.0;
-        p3.convergence.enabled = self.converge_enabled != 0;
+        p3.convergence.enabled = self.converge_enabled;
         p3.convergence.target = [
             self.converge_x as f64,
             self.converge_y as f64,
@@ -368,7 +370,7 @@ impl FilterConfig {
             2 => Arrival::Vanish,
             _ => Arrival::Continue,
         };
-        p3.boundary.enabled = self.bounce_enabled != 0;
+        p3.boundary.enabled = self.bounce_enabled;
         p3.boundary.min = [
             self.bounce_x_min as f64,
             self.bounce_y_min as f64,
@@ -380,12 +382,12 @@ impl FilterConfig {
             self.bounce_z_max as f64,
         ];
         p3.boundary.restitution = self.bounce_restitution as f64 / 100.0;
-        p3.dispersion.enabled = self.disperse_enabled != 0;
+        p3.dispersion.enabled = self.disperse_enabled;
         p3.dispersion.after = self.disperse_after_ms as f64 / 1000.0;
         p3.dispersion.impulse = self.disperse_impulse as f64;
         p3.dispersion.xy_spread_degrees = self.disperse_xy as f64;
         p3.dispersion.z_spread_degrees = self.disperse_z as f64;
-        p3.dispersion.on_bounce = self.disperse_on_bounce != 0;
+        p3.dispersion.on_bounce = self.disperse_on_bounce;
         p3.dispersion.stop_after = self.stop_after_ms as f64 / 1000.0;
         p3.orbit.plane = match self.orbit_mode {
             1 => OrbitPlane::Xy,
@@ -426,6 +428,7 @@ impl FilterConfig {
             spread_degrees: self.spread as f64,
             direction_z_degrees: self.direction_z as f64,
             spread_z_degrees: self.spread_z as f64,
+            initial_rotation_z_degrees: self.rotation_z_initial as f64,
             rotation_z_degrees_per_second: self.rotation_z_speed as f64,
             face_direction: false,
             simultaneous: self.simultaneous.max(1) as u32,
@@ -540,9 +543,10 @@ fn mask_clip(mode: i32) -> MaskClip {
 }
 
 // FilterConfigItem itself is not Send because it also supports opaque data
-// items. This filter only declares tracks and track groups, which are Send.
+// items. The declared tracks, checks, strings, text and files are all Send.
 enum TrackItem {
     Track(FilterConfigTrack),
+    Check(FilterConfigCheck),
     Group(FilterConfigTrackGroup),
     String(FilterConfigString),
     Text(FilterConfigText),
@@ -558,6 +562,7 @@ fn build_config_items() -> Vec<FilterConfigItem> {
                 .into_iter()
                 .map(|item| match item {
                     FilterConfigItem::Track(track) => TrackItem::Track(track),
+                    FilterConfigItem::Check(check) => TrackItem::Check(check),
                     FilterConfigItem::TrackGroup(group) => TrackItem::Group(group),
                     FilterConfigItem::String(value) => TrackItem::String(value),
                     FilterConfigItem::Text(value) => TrackItem::Text(value),
@@ -573,6 +578,7 @@ fn build_config_items() -> Vec<FilterConfigItem> {
         .into_iter()
         .map(|item| match item {
             TrackItem::Track(track) => FilterConfigItem::Track(track),
+            TrackItem::Check(check) => FilterConfigItem::Check(check),
             TrackItem::Group(group) => FilterConfigItem::TrackGroup(group),
             TrackItem::String(value) => FilterConfigItem::String(value),
             TrackItem::Text(value) => FilterConfigItem::Text(value),
@@ -677,6 +683,13 @@ fn render_filter_scripted(
         } else {
             video.object.frame
         };
+        let uses_getvalue = output_source
+            .into_iter()
+            .chain(behavior_source)
+            .any(|source| source.contains("obj.getvalue"));
+        let host_values = uses_getvalue
+            .then(|| p4_host::previous_layer_value_trace(video, script_time.max(longest_lifetime)))
+            .flatten();
         match script_control::build_motion(
             output_source,
             behavior_source,
@@ -687,6 +700,7 @@ fn render_filter_scripted(
             *video.scene.frame_rate.numer() as f64 / *video.scene.frame_rate.denom() as f64,
             longest_lifetime,
             video.object.layer,
+            host_values.as_ref(),
         ) {
             Ok(motion) => core.script_motion = motion,
             Err(error) => p4_host::warn_once(
@@ -818,7 +832,7 @@ fn render_filter_scripted(
     let mut profile_output_items =
         batch.particles.len() + batch.trail_images.len() + batch.trail_segments.len();
     let mut quads = Vec::with_capacity(batch.trail_segments.len());
-    if config.mesh_enabled != 0 {
+    if config.mesh_enabled {
         for segment in build_mesh(
             &batch.particles,
             config.mesh_distance.max(1) as f32,
@@ -849,7 +863,7 @@ fn render_filter_scripted(
     if !quads.is_empty() {
         video.draw_poly(&VertexList::QuadColor(quads), None)?;
     }
-    if config.mesh_enabled != 0 && config.mesh_faces != 0 {
+    if config.mesh_enabled && config.mesh_faces {
         let rgb =
             [config.mesh_r, config.mesh_g, config.mesh_b].map(|v| v.clamp(0, 255) as f32 / 255.0);
         let alpha = config.mesh_alpha.clamp(0, 100) as f32 / 100.0;
@@ -1003,5 +1017,28 @@ mod tests {
         assert!(config.sequence_pattern.is_empty());
         assert!(config.audio_file.is_none());
         assert_eq!(config.funnel_rings, 1);
+    }
+
+    #[test]
+    fn binary_basic_controls_are_checks() {
+        let items = build_config_items();
+        for name in [
+            "画像一覧をランダム",
+            "追跡時刻 0現在 1出生",
+            "メッシュを使用",
+            "面を描画",
+            "ファンネル画像をランダム",
+            "集結を使用",
+            "境界反射を使用",
+            "分散を使用",
+            "反射で分散",
+        ] {
+            assert!(items.iter().any(|item| {
+                matches!(item, FilterConfigItem::Check(value) if value.name == name)
+            }));
+            assert!(!items.iter().any(|item| {
+                matches!(item, FilterConfigItem::Track(value) if value.name == name)
+            }));
+        }
     }
 }

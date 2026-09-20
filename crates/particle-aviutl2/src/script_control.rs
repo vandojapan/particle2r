@@ -9,6 +9,7 @@ use particle_core::ScriptMotion;
 use std::{
     collections::HashMap,
     ffi::{CString, c_char, c_void},
+    fmt::Write as _,
     fs,
     path::{Path, PathBuf},
     ptr,
@@ -49,6 +50,61 @@ struct ScriptFileEntry {
 }
 
 static SCRIPT_FILES: OnceLock<Mutex<HashMap<PathBuf, ScriptFileEntry>>> = OnceLock::new();
+
+/// Values exposed through the legacy `obj.getvalue("N.x", t)` API.
+/// `legacy_layer` is one-based, matching the AviUtl 1.x script convention.
+#[derive(Clone, Debug)]
+pub(super) struct HostValueTrace {
+    legacy_layer: u32,
+    step: f64,
+    values: Vec<[f64; 3]>,
+}
+
+impl HostValueTrace {
+    pub(super) fn new(legacy_layer: u32, step: f64, values: Vec<[f64; 3]>) -> Self {
+        Self {
+            legacy_layer,
+            step,
+            values,
+        }
+    }
+
+    fn lua_prelude(&self) -> String {
+        let mut source = format!(
+            "local __particle2r_layer={};local __particle2r_step={:.17};local __particle2r_values={{",
+            self.legacy_layer, self.step
+        );
+        for value in &self.values {
+            let _ = write!(
+                source,
+                "{{{:.17},{:.17},{:.17}}},",
+                value[0], value[1], value[2]
+            );
+        }
+        source.push_str(
+            r#"}
+function obj.getvalue(key,t)
+  if type(key)~="string" or type(t)~="number" then return 0 end
+  local layer,axis=string.match(key,"^(%d+)%.([xyz])$")
+  if not layer then layer,axis=string.match(key,"^layer(%d+)%.([xyz])$") end
+  if tonumber(layer)~=__particle2r_layer then return 0 end
+  local axis_index=axis=="x" and 1 or axis=="y" and 2 or axis=="z" and 3 or nil
+  local count=#__particle2r_values
+  if not axis_index or count==0 then return 0 end
+  if count==1 or t<=0 then return __particle2r_values[1][axis_index] end
+  local position=t/__particle2r_step
+  if position>=count-1 then return __particle2r_values[count][axis_index] end
+  local lower=math.floor(position)+1
+  local fraction=position-math.floor(position)
+  local a=__particle2r_values[lower][axis_index]
+  local b=__particle2r_values[lower+1][axis_index]
+  return a+(b-a)*fraction
+end
+"#,
+        );
+        source
+    }
+}
 
 struct LuaApi {
     new_state: unsafe extern "C" fn() -> LuaState,
@@ -154,6 +210,7 @@ impl LuaVm {
         frame: u32,
         frame_total: u32,
         frame_rate: f64,
+        host_values: Option<&HostValueTrace>,
     ) -> Result<Self, String> {
         if source.len() > 1_048_576 {
             return Err("スクリプト制御コードが1MiBを超えています".to_string());
@@ -165,11 +222,24 @@ impl LuaVm {
         }
         unsafe { (api.open_libs)(state) };
         let mut vm = Self { api, state };
-        let prelude = format!(
+        // AviUtl2 exposes zero-based layers while the original Lua API uses
+        // one-based layer numbers.
+        let mut prelude = format!(
             "os=nil;io=nil;package=nil;debug=nil;coroutine=nil;obj={{layer={},time={:.17},totaltime={:.17},frame={},totalframe={},framerate={:.17}}}\n",
-            layer, object_time, object_total, frame, frame_total, frame_rate
+            layer.saturating_add(1),
+            object_time,
+            object_total,
+            frame,
+            frame_total,
+            frame_rate
         );
-        vm.exec(&(prelude + source))?;
+        if let Some(values) = host_values {
+            prelude.push_str(&values.lua_prelude());
+        } else {
+            prelude.push_str("function obj.getvalue(key,t) return 0 end\n");
+        }
+        prelude.push_str(source);
+        vm.exec(&prelude)?;
         Ok(vm)
     }
 
@@ -269,6 +339,7 @@ pub(super) fn build_motion(
     frame_rate: f64,
     lifetime: f64,
     layer: u32,
+    host_values: Option<&HostValueTrace>,
 ) -> Result<ScriptMotion, String> {
     if output_source.is_none() && behavior_source.is_none() {
         return Ok(ScriptMotion::default());
@@ -284,6 +355,7 @@ pub(super) fn build_motion(
             frame,
             frame_total,
             frame_rate,
+            host_values,
         )?;
         let (name, result_count, has_direction) = if vm.has_function("xyzd") {
             ("xyzd", 5, true)
@@ -313,6 +385,7 @@ pub(super) fn build_motion(
             frame,
             frame_total,
             frame_rate,
+            host_values,
         )?;
         if !vm.has_function("vector") {
             return Err("@挙動用の vector(t) がありません".to_string());
@@ -412,7 +485,7 @@ fn decode_script_bytes(bytes: &[u8]) -> Result<String, String> {
     Ok(String::from_utf16_lossy(&wide[..written as usize]))
 }
 
-fn curve_layout(duration: f64) -> (f64, usize) {
+pub(super) fn curve_layout(duration: f64) -> (f64, usize) {
     let requested = (duration * SAMPLE_RATE).ceil() as usize + 1;
     let count = requested.clamp(2, MAX_CURVE_SAMPLES);
     let step = if duration > 0.0 {
@@ -489,8 +562,19 @@ mod tests {
                 return 1, 2, 3
             end
         "#;
-        let motion =
-            build_motion(Some(source), Some(source), 1.0, 2.0, 30, 60, 30.0, 1.0, 1).unwrap();
+        let motion = build_motion(
+            Some(source),
+            Some(source),
+            1.0,
+            2.0,
+            30,
+            60,
+            30.0,
+            1.0,
+            1,
+            None,
+        )
+        .unwrap();
         let output = motion.output.last().unwrap();
         assert!((output[0] - 10.0).abs() < 1e-9);
         assert!((output[3] - std::f64::consts::FRAC_PI_2).abs() < 1e-9);
@@ -501,13 +585,136 @@ mod tests {
     }
 
     #[test]
+    fn documented_xyzd_moves_inward_and_degvxyz_rotates_triangle() {
+        let source = r#"
+            function xyzd(t)
+                local r=300
+                local degxy=math.pi*t*2
+                local degz=0
+                local x=r*math.sin(degxy)
+                local y=r*math.cos(degxy)
+                local z=0
+                degxy=degxy-math.pi
+                return x,y,z,degxy,degz
+            end
+        "#;
+        let motion =
+            build_motion(Some(source), None, 3.0, 3.0, 90, 90, 30.0, 3.0, 1, None).unwrap();
+        assert!(motion.output_has_direction);
+
+        // A triangle makes Z rotation visible. Particle zero starts at
+        // (0, 300), travels 100 px/s toward the centre, and spins 60 deg/s.
+        let config = particle_core::ParticleConfig {
+            frequency: 1.0,
+            speed: 100.0,
+            direction_degrees: 0.0,
+            spread_degrees: 0.0,
+            initial_rotation_z_degrees: 0.0,
+            rotation_z_degrees_per_second: 60.0,
+            lifetime: 3.0,
+            script_motion: motion,
+            ..Default::default()
+        };
+        let after_one_second = particle_core::sample(&config, 1.0)
+            .into_iter()
+            .find(|particle| particle.id == 0)
+            .unwrap();
+        assert!(after_one_second.x.abs() < 0.001);
+        assert!((after_one_second.y - 200.0).abs() < 0.01);
+        assert!((after_one_second.rz - 60.0).abs() < 0.001);
+
+        let before_end = particle_core::sample(&config, 2.999)
+            .into_iter()
+            .find(|particle| particle.id == 0)
+            .unwrap();
+        assert!(before_end.x.abs() < 0.001);
+        assert!(before_end.y.abs() < 0.2);
+        assert!(
+            particle_core::sample(&config, 3.0)
+                .into_iter()
+                .all(|particle| particle.id != 0)
+        );
+    }
+
+    #[test]
+    fn documented_xyzd_faces_triangle_tip_inward_in_each_quadrant() {
+        let source = r#"
+            function xyzd(t)
+                local r=300
+                local degxy=math.pi*t*2
+                local x=r*math.sin(degxy)
+                local y=r*math.cos(degxy)
+                local z=0
+                degxy=degxy-math.pi
+                return x,y,z,degxy,0
+            end
+        "#;
+        let motion =
+            build_motion(Some(source), None, 3.0, 3.0, 120, 120, 30.0, 3.0, 1, None).unwrap();
+        let config = particle_core::ParticleConfig {
+            frequency: 40.0, // four births per second, one in each quadrant
+            speed: 100.0,
+            spread_degrees: 0.0,
+            lifetime: 3.0,
+            face_direction: true,
+            script_motion: motion,
+            ..Default::default()
+        };
+        let particles = particle_core::sample(&config, 1.0);
+        for (id, expected) in [(0, 0.0), (1, 270.0), (2, 180.0), (3, 90.0)] {
+            let particle = particles
+                .iter()
+                .find(|particle| particle.id == id)
+                .unwrap_or_else(|| panic!("missing xyzd particle {id}"));
+            let difference = (particle.rz as f64 - expected).rem_euclid(360.0);
+            assert!(
+                difference.min(360.0 - difference) < 0.001,
+                "particle {id}: got {}, expected {expected}",
+                particle.rz
+            );
+        }
+    }
+
+    #[test]
+    fn documented_xyzd_degz_controls_z_output_direction() {
+        let source = r#"
+            function xyzd(t)
+                return 0, 0, 0, 0, math.pi / 2
+            end
+        "#;
+        let motion =
+            build_motion(Some(source), None, 1.0, 1.0, 30, 30, 30.0, 1.0, 1, None).unwrap();
+        assert!(motion.output_has_direction);
+        let config = particle_core::ParticleConfig {
+            frequency: 1.0,
+            speed: 100.0,
+            spread_degrees: 0.0,
+            spread_z_degrees: 0.0,
+            lifetime: 1.0,
+            script_motion: motion,
+            ..Default::default()
+        };
+        let particle = particle_core::sample(&config, 0.5)
+            .into_iter()
+            .find(|particle| particle.id == 0)
+            .unwrap();
+        assert!(particle.x.abs() < 0.001);
+        assert!(particle.y.abs() < 0.001);
+        assert!((particle.z - 50.0).abs() < 0.01);
+        // degz is a Z output direction, not the triangle's Z roll. Roll is
+        // controlled by rotxyz/degvxyz or the separate facing option.
+        assert!(particle.rz.abs() < 0.001);
+    }
+
+    #[test]
     fn legacy_object_time_globals_are_available() {
         let source = r#"
             function xyz(t)
                 return obj.totaltime - t, obj.framerate, obj.totalframe
             end
         "#;
-        let motion = build_motion(Some(source), None, 2.0, 2.0, 60, 60, 30.0, 1.0, 1).unwrap();
+        let motion =
+            build_motion(Some(source), None, 2.0, 2.0, 60, 60, 30.0, 1.0, 1, None).unwrap();
         let endpoint = motion.output.last().unwrap();
         assert!(endpoint[0].abs() < 1e-9);
         assert_eq!(endpoint[1], 30.0);
@@ -521,5 +728,123 @@ mod tests {
             "function xyz(t) end"
         );
         assert_eq!(decode_script_bytes(&[0x82, 0xa0]).unwrap(), "あ");
+    }
+
+    #[test]
+    fn every_bundled_custom_function_runs_to_its_endpoint() {
+        let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("templates/original/自作関数サンプル");
+        let mut files = fs::read_dir(&directory)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.extension().and_then(|value| value.to_str()) == Some("txt"))
+            .collect::<Vec<_>>();
+        files.sort();
+        assert_eq!(files.len(), 11);
+
+        let duration = 2.0;
+        let (step, count) = curve_layout(duration);
+        let host_values = HostValueTrace::new(
+            1,
+            step,
+            (0..count)
+                .map(|index| {
+                    let time = index as f64 * step;
+                    [time * 20.0, time * -10.0, time * 5.0]
+                })
+                .collect(),
+        );
+
+        let mut output_only = 0;
+        let mut behavior_only = 0;
+        let mut output_and_behavior = 0;
+        for path in files {
+            let source = load_source_file(&path).unwrap();
+            let has_output = source.contains("function xyz(") || source.contains("function xyzd(");
+            let has_behavior = source.contains("function vector(");
+            assert!(has_output || has_behavior, "{}", path.display());
+            let motion = build_motion(
+                has_output.then_some(source.as_str()),
+                has_behavior.then_some(source.as_str()),
+                duration,
+                duration,
+                60,
+                60,
+                30.0,
+                duration,
+                1,
+                Some(&host_values),
+            )
+            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+            if has_output {
+                assert!(!motion.output.is_empty(), "{}", path.display());
+                assert!(
+                    motion
+                        .output
+                        .iter()
+                        .flatten()
+                        .all(|value| value.is_finite()),
+                    "{}",
+                    path.display()
+                );
+                if path.file_name().and_then(|name| name.to_str())
+                    == Some("出力自作関数_擬似オブジェクト追跡.txt")
+                {
+                    let endpoint = motion.output.last().unwrap();
+                    assert!((endpoint[0] - 40.0).abs() < 1e-9, "{}", path.display());
+                    assert!((endpoint[1] + 20.0).abs() < 1e-9, "{}", path.display());
+                    assert!((endpoint[2] - 10.0).abs() < 1e-9, "{}", path.display());
+                }
+            }
+            if has_behavior {
+                assert!(!motion.behavior_position.is_empty(), "{}", path.display());
+                assert!(
+                    motion
+                        .behavior_position
+                        .iter()
+                        .flatten()
+                        .all(|value| value.is_finite()),
+                    "{}",
+                    path.display()
+                );
+            }
+
+            match (has_output, has_behavior) {
+                (true, true) => output_and_behavior += 1,
+                (true, false) => output_only += 1,
+                (false, true) => behavior_only += 1,
+                (false, false) => unreachable!(),
+            }
+
+            // Exercise the same final computation used when a triangle is the
+            // source object. The renderer consumes x/y/z/rz from these samples.
+            let triangle = particle_core::ParticleConfig {
+                frequency: 1.0,
+                speed: 100.0,
+                spread_degrees: 0.0,
+                initial_rotation_z_degrees: 0.0,
+                rotation_z_degrees_per_second: 60.0,
+                lifetime: duration,
+                script_motion: motion,
+                ..Default::default()
+            };
+            let particles = particle_core::sample(&triangle, duration * 0.75);
+            let first = particles
+                .iter()
+                .find(|particle| particle.id == 0)
+                .unwrap_or_else(|| panic!("{}: triangle particle is missing", path.display()));
+            assert!(
+                [first.x, first.y, first.z, first.rx, first.ry, first.rz]
+                    .into_iter()
+                    .all(f32::is_finite),
+                "{}",
+                path.display()
+            );
+            assert!((first.rz - 90.0).abs() < 0.001, "{}", path.display());
+        }
+        assert_eq!(output_only, 7);
+        assert_eq!(behavior_only, 3);
+        assert_eq!(output_and_behavior, 1);
     }
 }

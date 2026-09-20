@@ -38,10 +38,11 @@ pub struct ParticleConfig {
     pub spread_degrees: f64,
     pub direction_z_degrees: f64,
     pub spread_z_degrees: f64,
+    pub initial_rotation_z_degrees: f64,
     pub rotation_z_degrees_per_second: f64,
-    /// Add the current XY travel direction to the Z rotation. This matches
-    /// the legacy 「進行方向を向く」 switch; the configured initial/spin
-    /// rotation is still applied afterwards.
+    /// Align the source object's forward axis with the current XY travel
+    /// direction. This matches the legacy 「進行方向を向く」 switch; the
+    /// configured initial/spin rotation is still applied afterwards.
     pub face_direction: bool,
     pub simultaneous: u32,
     pub lifetime: f64,
@@ -76,7 +77,8 @@ impl Default for ParticleConfig {
             spread_degrees: 60.0,
             direction_z_degrees: 0.0,
             spread_z_degrees: 0.0,
-            rotation_z_degrees_per_second: 60.0,
+            initial_rotation_z_degrees: 0.0,
+            rotation_z_degrees_per_second: 0.0,
             face_direction: false,
             simultaneous: 1,
             lifetime: 3.0,
@@ -200,6 +202,7 @@ impl SeedCacheKey {
         number!(config.spread_degrees);
         number!(config.direction_z_degrees);
         number!(config.spread_z_degrees);
+        number!(config.initial_rotation_z_degrees);
         number!(config.rotation_z_degrees_per_second);
         values.push(config.face_direction as u64);
         values.push(config.simultaneous as u64);
@@ -530,7 +533,10 @@ fn particle_seed(
             elevation = output[4] + (rng.unit() * 2.0 - 1.0) * config.spread_z_degrees * PI / 180.0;
         }
     }
-    let initial_rotation_z = rng.unit() * 360.0;
+    // Keep the legacy RNG consumption order so disabling the implicit random
+    // Z angle does not change later variation, lifetime, or material choices.
+    let _legacy_rotation_random = rng.unit();
+    let initial_rotation_z = config.initial_rotation_z_degrees;
     let variation = config.p3.variation;
     let speed = config.speed * variation_factor(&mut rng, variation.speed_percent);
     let mut lifetime = config.lifetime * variation_factor(&mut rng, variation.lifetime_percent);
@@ -589,6 +595,16 @@ fn variation_factor(rng: &mut Mt19937, percent: f64) -> f64 {
     } else {
         (1.0 + (rng.unit() * 2.0 - 1.0) * percent.abs() / 100.0).max(0.0)
     }
+}
+
+/// Convert an XY travel vector to the Z angle used by AviUtl's source
+/// objects.  The built-in triangle's forward axis is its local `-Y` (the
+/// pointed end); particle motion uses the legacy `(sin(angle), cos(angle))`
+/// screen-coordinate basis.  Converting through that shared basis keeps the
+/// pointed end, rather than the triangle's base, aligned with travel in every
+/// quadrant.
+fn facing_rotation_degrees(dx: f64, dy: f64) -> f64 {
+    (180.0 - dx.atan2(dy).to_degrees()).rem_euclid(360.0)
 }
 
 fn sample_seed(
@@ -656,7 +672,7 @@ fn sample_seed(
                     (other[0] - pos[0], other[1] - pos[1])
                 };
                 if dx.abs() + dy.abs() > 1e-12 {
-                    dx.atan2(dy).to_degrees()
+                    facing_rotation_degrees(dx, dy)
                 } else {
                     0.0
                 }
@@ -858,6 +874,31 @@ mod tests {
     }
 
     #[test]
+    fn scripted_output_direction_is_seek_stable() {
+        let config = ParticleConfig {
+            speed: 100.0,
+            frequency: 10.0,
+            spread_degrees: 0.0,
+            spread_z_degrees: 0.0,
+            lifetime: 3.0,
+            script_motion: ScriptMotion {
+                output_step: 1.0,
+                output: vec![[0.0, 0.0, 0.0, PI / 4.0, PI / 6.0]; 4],
+                output_has_direction: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let mut workspace = RenderWorkspace::default();
+        for time in [0.0, 1.0, 2.5, 0.2, 3.0] {
+            assert_eq!(
+                render_batch(&config, time),
+                render_batch_cached(&config, time, &mut workspace)
+            );
+        }
+    }
+
+    #[test]
     fn legacy_xyzd_circle_normal_reaches_centre_at_lifetime() {
         let mut config = ParticleConfig {
             speed: 100.0,
@@ -919,12 +960,21 @@ mod tests {
     fn rotation_uses_particle_age() {
         let c = ParticleConfig {
             frequency: 10.0,
+            rotation_z_degrees_per_second: 60.0,
             ..Default::default()
         };
         let initial = sample(&c, 0.0)[0];
         let after_one_second = sample(&c, 1.0)[0];
         assert_eq!(initial.id, after_one_second.id);
+        assert!(initial.rz.abs() < 0.0001);
         assert!((after_one_second.rz - initial.rz - 60.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn default_particles_have_no_z_rotation() {
+        let samples = sample(&ParticleConfig::default(), 1.0);
+        assert!(!samples.is_empty());
+        assert!(samples.iter().all(|particle| particle.rz.abs() < 0.0001));
     }
 
     #[test]
@@ -947,6 +997,45 @@ mod tests {
         )[0];
         let difference = (facing.rz - normal.rz).rem_euclid(360.0);
         assert!((difference - 90.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn face_direction_maps_triangle_tip_to_travel_vector() {
+        // The source triangle points along local -Y.  After Z rotation, that
+        // tip is (sin(rz), -cos(rz)) in the screen coordinate system used by
+        // the renderer.  Each cardinal travel vector must receive the angle
+        // that maps this local axis onto the vector exactly.
+        for (dx, dy, expected) in [
+            (0.0, 1.0, 180.0),  // down
+            (1.0, 0.0, 90.0),   // right
+            (0.0, -1.0, 0.0),   // up
+            (-1.0, 0.0, 270.0), // left
+        ] {
+            let angle = facing_rotation_degrees(dx, dy);
+            assert!((angle - expected).abs() < 0.001, "{dx},{dy} -> {angle}");
+            let (s, c) = angle.to_radians().sin_cos();
+            let tip = [s, -c];
+            assert!((tip[0] - dx).abs() < 0.001);
+            assert!((tip[1] - dy).abs() < 0.001);
+        }
+    }
+
+    #[test]
+    fn face_direction_preserves_initial_and_spin_offsets() {
+        let config = ParticleConfig {
+            frequency: 10.0,
+            speed: 100.0,
+            direction_degrees: 0.0,
+            spread_degrees: 0.0,
+            initial_rotation_z_degrees: 15.0,
+            rotation_z_degrees_per_second: 10.0,
+            face_direction: true,
+            ..Default::default()
+        };
+        let particle = sample(&config, 0.5)[0];
+        // Direction 0 travels down, so the triangle tip angle is 180°;
+        // configured initial rotation and spin are still added afterwards.
+        assert!((particle.rz - 200.0).abs() < 0.001);
     }
 
     #[test]
