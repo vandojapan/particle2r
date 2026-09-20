@@ -58,6 +58,10 @@ Windows x64 と Rust 1.98 以降を想定します。MSVC ターゲットの場�
 
 `au2 develop --skip-start` による配置と、AviUtl2 2.1.9 のログで本体・31拡張の計32効果がエラーなしで登録されることを確認しました。実際の積層効果を操作した画面と旧版の出力画像の比較は未実施です。
 
+### Actionsからリリースを公開
+
+GitHubの **Actions → Publish au2pkg release → Run workflow** を実行すると、選択したコミットをWindowsでテスト・ビルドし、`aviutl2.toml` のバージョンに対応する `v<version>` タグのGitHub Releaseへ `.au2pkg.zip` とSHA-256ファイルを登録します。`prerelease` と `draft` は実行時に選択できます。同じタグのリリースが既に存在する場合は上書きせず失敗します。
+
 ## 構成
 
 - `crates/particle-core`: ホスト非依存の MT19937、発生・運動・寿命の計算。

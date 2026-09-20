@@ -1,0 +1,121 @@
+name: Publish au2pkg release
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Mark the GitHub release as a prerelease"
+        required: true
+        default: true
+        type: boolean
+      draft:
+        description: "Create the release as a draft"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      PRERELEASE: ${{ inputs.prerelease }}
+      DRAFT: ${{ inputs.draft }}
+    steps:
+      - name: Checkout selected revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install aviutl2-cli
+        shell: pwsh
+        run: Invoke-WebRequest -Uri 'https://github.com/sevenc-nanashi/aviutl2-cli/releases/download/0.11.2/au2-v0.11.2-windows.exe' -OutFile 'au2.exe'
+
+      - name: Prepare AviUtl2 runtime
+        shell: pwsh
+        run: |
+          .\au2.exe prepare:aviutl2
+          if ($LASTEXITCODE -ne 0) {
+            throw "aviutl2-cli failed with exit code $LASTEXITCODE"
+          }
+          if (-not (Test-Path -LiteralPath '.aviutl2-cli/development/lua.dll' -PathType Leaf)) {
+            throw 'AviUtl2 lua.dll was not prepared'
+          }
+
+      - name: Test workspace
+        run: cargo test --workspace --locked
+
+      - name: Build plugin variants
+        shell: pwsh
+        run: |
+          cargo build -p particle-aviutl2 --release --no-default-features --features stack-basic --target-dir target/stack-basic
+          cargo build -p particle-aviutl2 --release --no-default-features --features stack-extension --target-dir target/stack-extension
+
+      - name: Package
+        shell: pwsh
+        run: .\au2.exe release
+
+      - name: Verify and checksum package
+        id: package
+        shell: pwsh
+        run: |
+          $packages = @(Get-ChildItem -LiteralPath release -Filter 'particle2r-*.au2pkg.zip' -File)
+          if ($packages.Count -ne 1) { throw "expected exactly one au2 package, found $($packages.Count)" }
+          $package = $packages[0]
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [IO.Compression.ZipFile]::OpenRead($package.FullName)
+          try {
+            $names = @($archive.Entries | ForEach-Object { $_.FullName })
+            if (($names | Where-Object { $_ -like 'Plugin/*.auf2' }).Count -ne 32) { throw 'expected 32 auf2 files' }
+            if (($names | Where-Object { $_ -like 'docs/*.md' }).Count -ne 6) { throw 'expected 6 documents' }
+            if (($names | Where-Object { $_ -match '\.(aux2|mod2)$' }).Count -ne 0) { throw 'unexpected plugin type' }
+            if (($names | Where-Object { $_ -like 'templates/original/*.anm' }).Count -ne 3) { throw 'expected 3 original anm templates' }
+            if (($names | Where-Object { $_ -like 'templates/original/自作関数サンプル/*.txt' }).Count -ne 11) { throw 'expected 11 original function samples' }
+            if (($names | Where-Object { $_ -eq 'templates/original/README.md' }).Count -ne 1) { throw 'expected original template guide' }
+            if (($names | Where-Object { $_ -match '\.anm$' -and $_ -notlike 'templates/original/*.anm' }).Count -ne 0) { throw 'anm template was placed in an active plugin directory' }
+          } finally {
+            $archive.Dispose()
+          }
+          $checksumPath = "$($package.FullName).sha256"
+          $hash = (Get-FileHash -LiteralPath $package.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($package.Name)" | Set-Content -LiteralPath $checksumPath -Encoding ascii
+          "package=$($package.FullName)" >> $env:GITHUB_OUTPUT
+          "checksum=$checksumPath" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $versionLine = Get-Content -LiteralPath 'aviutl2.toml' | Where-Object { $_ -match '^\s*version\s*=' } | Select-Object -First 1
+          if (-not $versionLine -or $versionLine -notmatch 'version\s*=\s*"([^"]+)"') {
+            throw 'Could not read project version from aviutl2.toml'
+          }
+          $tag = "v$($Matches[1])"
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            throw "GitHub release $tag already exists"
+          }
+          $LASTEXITCODE = 0
+          $arguments = @(
+            'release', 'create', $tag,
+            '${{ steps.package.outputs.package }}',
+            '${{ steps.package.outputs.checksum }}',
+            '--repo', $env:GITHUB_REPOSITORY,
+            '--target', $env:GITHUB_SHA,
+            '--title', "particle2r $tag",
+            '--generate-notes'
+          )
+          if ($env:PRERELEASE -eq 'true') { $arguments += '--prerelease' }
+          if ($env:DRAFT -eq 'true') { $arguments += '--draft' }
+          gh @arguments
